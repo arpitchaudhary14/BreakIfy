@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # MongoDB Database (Internal network only - no exposed public ports)
+  mongodb:
+    image: mongo:7.0-jammy
+    container_name: breakify-mongodb
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - breakify-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Express Backend API
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: breakify-backend
+    restart: unless-stopped
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
+      - API_PREFIX=/api/v1
+      - CLIENT_URL=http://localhost
+      - MONGODB_URI=mongodb://mongodb:27017/breakify
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET:-change-this-in-production-access-secret-32-chars}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-change-this-in-production-refresh-secret-32-chars}
+      - EMAIL_SERVICE=${EMAIL_SERVICE:-console}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - breakify-net
+
+  # React SPA & Nginx Reverse Proxy
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: breakify-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - breakify-net
+
+networks:
+  breakify-net:
+    driver: bridge
+
+volumes:
+  mongo-data:
+    driver: local
+

@@ -1,0 +1,30 @@
+{
+  "name": "breakify",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BreakIfy - Enterprise URL Shortening and Link Management SaaS",
+  "scripts": {
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "build:server": "npm --prefix server run build",
+    "build:client": "npm --prefix client run build",
+    "build": "npm run build:server && npm run build:client",
+    "lint:server": "npm --prefix server run lint",
+    "lint:client": "npm --prefix client run lint",
+    "lint": "npm run lint:server && npm run lint:client",
+    "test:server": "npm --prefix server test",
+    "test:client": "node server/node_modules/vitest/vitest.mjs run client/src/__tests__/client.test.ts",
+    "test": "npm run test:server && npm run test:client"
+  },
+  "keywords": [
+    "url-shortener",
+    "link-management",
+    "saas",
+    "react",
+    "express",
+    "typescript"
+  ],
+  "author": "Arpit Chaudhary",
+  "license": "MIT"
+}
+
