@@ -16,3 +16,4 @@ export async function onRequest(context) {
 
   return fetch(newRequest);
 }
+
