@@ -304,7 +304,7 @@ export function OverviewPage({ onQuickCreate }: OverviewPageProps) {
                       },
                       {
                         id: 'delete',
-                        label: 'Delete Link',
+                        label: 'Move to Recycle Bin',
                         icon: <Trash2 className="w-3.5 h-3.5" />,
                         destructive: true,
                         onClick: () => setLinkToDelete(link),
@@ -461,13 +461,13 @@ export function OverviewPage({ onQuickCreate }: OverviewPageProps) {
         isOpen={!!linkToDelete}
         onClose={() => setLinkToDelete(null)}
         onConfirm={handleDeleteConfirm}
-        title="Delete Short Link"
+        title="Move Link to Recycle Bin"
         message={
           linkToDelete
-            ? `Are you sure you want to delete ${getShortDisplay(linkToDelete.shortCode)}? This will immediately break existing QR codes and redirects.`
+            ? `Are you sure you want to delete ${getShortDisplay(linkToDelete.shortCode)}? It will be suspended and moved to your Recycle Bin for 30 days, where you can restore it anytime.`
             : ''
         }
-        confirmLabel="Delete Link"
+        confirmLabel="Move to Recycle Bin"
         isDestructive={true}
       />
     </div>
