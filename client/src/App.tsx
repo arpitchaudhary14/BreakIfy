@@ -68,7 +68,7 @@ function AppContent() {
           const backendRedirect =
             window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
               ? `http://localhost:5000${pathname}${window.location.search}`
-              : `http://localhost:5000${pathname}${window.location.search}`;
+              : `https://api.breakify.site${pathname}${window.location.search}`;
           window.location.replace(backendRedirect);
           return;
         }

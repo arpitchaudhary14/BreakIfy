@@ -6,8 +6,8 @@
 ---
 
 ### 🌐 Live Demo Here
-👉 **[BreakIfy Live Application](https://your-live-demo-link-here.com)**  
-*(Replace this URL with your production or staging deployment link)*
+👉 **[BreakIfy Live Application](https://breakify.site)**  
+*Production deployment running globally on Cloudflare Pages and Azure with MongoDB Atlas.*
 
 ---
 
