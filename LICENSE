@@ -1,6 +1,100 @@
-BreakIfy License Agreement
+================================================================================
+BREAKIFY PROPRIETARY SOFTWARE LICENSE AND USER AGREEMENT
+================================================================================
 
-Copyright (c) 2026 BreakIfy. All Rights Reserved.
+© 2026 BreakIfy. All Rights Reserved.
 
-Permission is hereby granted to use BreakIfy in accordance with the BreakIfy Terms of Service.
-All software, trademarks, logos, and telemetry features are the exclusive property of BreakIfy.
+IMPORTANT: PLEASE READ THIS PROPRIETARY SOFTWARE LICENSE AND SERVICE AGREEMENT
+CAREFULLY BEFORE ACCESSING, DOWNLOADING, INSTALLING, RUNNING, OR USING ANY PART
+OF THE BREAKIFY PLATFORM, ITS SOURCE REPOSITORIES, COMPILED BINARIES, DOCKER
+IMAGES, ASSOCIATED LIBRARIES, INTERFACES, OR APPLICATION PROGRAMMING INTERFACES.
+
+--------------------------------------------------------------------------------
+1. DEFINITIONS AND SCOPE
+--------------------------------------------------------------------------------
+1.1 "Software" refers collectively to the BreakIfy platform, including but not
+    limited to the user interface, backend application programming interfaces (APIs),
+    underlying algorithms, telemetry pipelines, dynamic QR generation engines,
+    cryptographic components, documentation, containers, and database schemas.
+1.2 "Licensor" means BreakIfy.
+1.3 "Licensee" (or "You") refers to any individual, company, or organization that
+    accesses, executes, or deploys the Software.
+
+--------------------------------------------------------------------------------
+2. GRANT OF CONDITIONAL LICENSE
+--------------------------------------------------------------------------------
+2.1 Subject to the terms of this Agreement, Licensor hereby grants Licensee a
+    revocable, non-exclusive, non-transferable, and limited right to deploy, run,
+    and operate the Software solely for authorized internal, administrative, or
+    commercial routing operations.
+2.2 Title and full intellectual property rights in and to the Software, including
+    all patents, trademarks, service marks, copyrights, trade secrets, designs,
+    and algorithms, remain exclusively with BreakIfy.
+
+--------------------------------------------------------------------------------
+3. RESTRICTIONS AND PROHIBITED USE
+--------------------------------------------------------------------------------
+Except as expressly permitted by applicable law or written authorization from
+BreakIfy, Licensee shall not:
+3.1 Modify, adapt, translate, reverse engineer, decompile, decrypt, or disassemble
+    any portion of the Software.
+3.2 Sell, resell, rent, lease, sublicense, distribute, or otherwise assign the
+    Software or its core routing engine to third parties for commercial resale as
+    a standalone white-label product without explicit authorization.
+3.3 Remove, alter, obscure, or obliterate any proprietary notice, trademark,
+    copyright notice, or digital fingerprint embedded in the Software.
+3.4 Utilize the Software to generate malicious redirection links, conduct phishing,
+    spread malware, harvest credentials, bypass access controls, or engage in any
+    denial-of-service (DoS/DDoS) activities.
+3.5 Circumvent, tamper with, or disable authentication gates, rate limiters, or
+    security telemetry mechanisms embedded within the Software.
+
+--------------------------------------------------------------------------------
+4. TELEMETRY, INTEGRITY, AND DATA PRIVACY PLEDGE
+--------------------------------------------------------------------------------
+4.1 The Software records routing telemetry, visitor metadata (such as timestamps,
+    browsers, and operating systems), and salted cryptographic identifiers
+    solely for fraud deterrence, link analytics, and abuse monitoring.
+4.2 Licensor maintains an absolute Zero Third-Party Selling Pledge: user data,
+    access patterns, and redirection metrics processed through the Software
+    shall never be rented, brokered, or sold to third-party data brokers, marketing
+    aggregators, or used to train public machine learning models.
+
+--------------------------------------------------------------------------------
+5. DISCLAIMER OF WARRANTIES
+--------------------------------------------------------------------------------
+THE SOFTWARE IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS, WITHOUT WARRANTY
+OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND
+NON-INFRINGEMENT. BREAKIFY DOES NOT WARRANT THAT THE SOFTWARE WILL OPERATE
+UNINTERRUPTED, COMPLETELY ERROR-FREE, OR COMPATIBLE WITH EVERY HOST ENVIRONMENT.
+
+--------------------------------------------------------------------------------
+6. LIMITATION OF LIABILITY
+--------------------------------------------------------------------------------
+IN NO EVENT SHALL BREAKIFY, ITS CONTRIBUTORS, OR ITS AFFILIATES BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, PUNITIVE, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, REVENUE, OR PROFITS; OR BUSINESS INTERRUPTION)
+ARISING IN ANY WAY OUT OF THE USE OF, INABILITY TO USE, OR RELIANCE UPON THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+--------------------------------------------------------------------------------
+7. TERMINATION
+--------------------------------------------------------------------------------
+This Agreement remains effective until terminated. Your rights under this license
+shall terminate automatically and immediately without notice if you fail to
+comply with any term or condition of this Agreement. Upon termination, Licensee
+shall immediately cease all use of the Software and destroy all copies in their
+possession or control.
+
+--------------------------------------------------------------------------------
+8. ENTIRE AGREEMENT AND SEVERABILITY
+--------------------------------------------------------------------------------
+If any provision of this Agreement is held to be invalid or unenforceable, such
+provision shall be modified to the minimum extent necessary to make it valid and
+enforceable, and the remaining provisions shall continue in full force and effect.
+
+================================================================================
+BreakIfy Core Foundation | © 2026 BreakIfy. All Rights Reserved.
+================================================================================
