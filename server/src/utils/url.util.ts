@@ -29,15 +29,21 @@ export const RESERVED_SLUGS = new Set([
 ]);
 
 /**
- * Generate a cryptographically secure Base62 short code.
+ * Generate a cryptographically secure Base62 short code that always includes
+ * random numbers and letters (typical of modern url shorteners like Bitly).
  */
 export function generateShortCode(length = 7): string {
-  const bytes = crypto.randomBytes(length);
-  let code = '';
-  for (let i = 0; i < length; i++) {
-    code += BASE62_ALPHABET[bytes[i] % BASE62_ALPHABET.length];
+  while (true) {
+    const bytes = crypto.randomBytes(length);
+    let code = '';
+    for (let i = 0; i < length; i++) {
+      code += BASE62_ALPHABET[bytes[i] % BASE62_ALPHABET.length];
+    }
+    // Ensure code contains at least one digit and at least one letter, and not reserved
+    if (/\d/.test(code) && /[a-zA-Z]/.test(code) && !RESERVED_SLUGS.has(code.toLowerCase())) {
+      return code;
+    }
   }
-  return code;
 }
 
 /**

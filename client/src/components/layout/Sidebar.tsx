@@ -9,7 +9,6 @@ import {
   Settings,
   X,
   PlusCircle,
-  ExternalLink,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 
@@ -111,24 +110,6 @@ export function Sidebar({
             );
           })}
         </nav>
-      </div>
-
-      {/* Footer / Domain Status */}
-      <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800/80 space-y-2">
-        <div className="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40">
-          <div className="flex items-center justify-between text-xs font-medium text-zinc-900 dark:text-zinc-200">
-            <span>Active Domain</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-          </div>
-          <div className="mt-1 flex items-center justify-between text-[11px] text-zinc-500 font-mono">
-            <span>breakify.site</span>
-            <ExternalLink className="w-3 h-3" />
-          </div>
-        </div>
-
-        <div className="text-[11px] text-zinc-400 dark:text-zinc-600 text-center">
-          BreakIfy v0.1.0 Foundation
-        </div>
       </div>
     </div>
   );

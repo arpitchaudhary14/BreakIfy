@@ -19,10 +19,6 @@ import {
   Calendar,
   Clock,
   Gauge,
-  Globe,
-  Smartphone,
-  Split,
-  X,
   AlertTriangle,
   QrCode,
   Upload,
@@ -48,81 +44,13 @@ import {
   linkApi,
   LinkItem,
   LinkStatus,
-  IGeoRule,
-  IDeviceRules,
-  IAbVariant,
   CreateLinkPayload,
   UpdateLinkPayload,
   CsvImportResult,
 } from '../../services/linkApi';
+import { getShortUrl, getShortDisplay } from '../../utils/urlHelper';
 
-const SEED_LINKS: LinkItem[] = [
-  {
-    _id: '507f1f77bcf86cd799439011',
-    title: 'BreakIfy Enterprise Whitepaper',
-    originalUrl: 'https://breakify.site/resources/whitepaper-v2',
-    shortCode: 'enterprise-wp',
-    status: 'active',
-    isPasswordProtected: true,
-    maxClicks: 5000,
-    clicks: 1420,
-    tags: ['enterprise', 'sales'],
-    notes: 'Protected with passkey for enterprise sales leads',
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    _id: '507f1f77bcf86cd799439012',
-    title: 'Landing Page Checkout Experiment',
-    originalUrl: 'https://breakify.site/checkout/standard',
-    shortCode: 'checkout-ab',
-    status: 'active',
-    clicks: 8490,
-    abTesting: {
-      enabled: true,
-      variants: [
-        { id: 'v1', name: 'Original Single Page', destinationUrl: 'https://breakify.site/checkout/v1', weight: 50, clicks: 4230 },
-        { id: 'v2', name: 'Optimized 2-Step', destinationUrl: 'https://breakify.site/checkout/v2', weight: 50, clicks: 4260 },
-      ],
-    },
-    tags: ['marketing', 'ab-test'],
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    _id: '507f1f77bcf86cd799439013',
-    title: 'Global Mobile App Download',
-    originalUrl: 'https://breakify.site/download',
-    shortCode: 'app-download',
-    status: 'active',
-    geoRules: [
-      { countryCode: 'GB', destinationUrl: 'https://uk.breakify.site/download' },
-      { countryCode: 'DE', destinationUrl: 'https://de.breakify.site/download' },
-    ],
-    deviceRules: {
-      mobile: 'https://breakify.site/mobile-redirect',
-      tablet: 'https://breakify.site/tablet-redirect',
-    },
-    clicks: 3912,
-    tags: ['mobile', 'geo'],
-    createdAt: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    _id: '507f1f77bcf86cd799439014',
-    title: 'Flash Sale Promo Link (Expired)',
-    originalUrl: 'https://breakify.site/promo/flash-2026',
-    shortCode: 'flash-sale',
-    status: 'active',
-    expiresAt: new Date(Date.now() - 3600 * 1000).toISOString(),
-    clicks: 1042,
-    tags: ['promo'],
-    createdAt: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(),
-  },
-];
-
-type ModalTab = 'general' | 'security' | 'schedule' | 'geo-device' | 'ab';
+type ModalTab = 'general' | 'security' | 'schedule';
 
 export function MyLinksPage() {
   const [links, setLinks] = useState<LinkItem[]>([]);
@@ -139,6 +67,7 @@ export function MyLinksPage() {
   // Selection & Bulk
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
+  const [isDeleteAllOpen, setIsDeleteAllOpen] = useState(false);
 
   // Modals
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -165,19 +94,6 @@ export function MyLinksPage() {
   const [formExpiresAt, setFormExpiresAt] = useState('');
   const [formMaxClicks, setFormMaxClicks] = useState<string>('');
 
-  const [formGeoRules, setFormGeoRules] = useState<IGeoRule[]>([]);
-  const [formNewCountry, setFormNewCountry] = useState('');
-  const [formNewGeoUrl, setFormNewGeoUrl] = useState('');
-
-  const [formDeviceRules, setFormDeviceRules] = useState<IDeviceRules>({
-    desktop: '',
-    mobile: '',
-    tablet: '',
-  });
-
-  const [formAbEnabled, setFormAbEnabled] = useState(false);
-  const [formAbVariants, setFormAbVariants] = useState<IAbVariant[]>([]);
-
   const [formSaving, setFormSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -189,13 +105,13 @@ export function MyLinksPage() {
         status: statusFilter === 'all' ? undefined : statusFilter,
         sort: sortOption,
       });
-      if (res && res.links && res.links.length > 0) {
+      if (res && res.links) {
         setLinks(res.links);
       } else {
-        setLinks(SEED_LINKS);
+        setLinks([]);
       }
     } catch {
-      setLinks(SEED_LINKS);
+      setLinks([]);
     } finally {
       setLoading(false);
     }
@@ -205,8 +121,14 @@ export function MyLinksPage() {
     fetchLinks();
   }, [search, statusFilter, sortOption]);
 
+  useEffect(() => {
+    const handleCreated = () => fetchLinks();
+    window.addEventListener('link-created', handleCreated);
+    return () => window.removeEventListener('link-created', handleCreated);
+  }, []);
+
   const handleCopy = (code: string) => {
-    const fullUrl = `https://breakify.site/${code}`;
+    const fullUrl = getShortUrl(code);
     navigator.clipboard.writeText(fullUrl);
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
@@ -226,12 +148,6 @@ export function MyLinksPage() {
     setFormStartsAt('');
     setFormExpiresAt('');
     setFormMaxClicks('');
-    setFormGeoRules([]);
-    setFormNewCountry('');
-    setFormNewGeoUrl('');
-    setFormDeviceRules({ desktop: '', mobile: '', tablet: '' });
-    setFormAbEnabled(false);
-    setFormAbVariants([]);
     setFormError(null);
   };
 
@@ -255,63 +171,7 @@ export function MyLinksPage() {
     setFormExpiresAt(link.expiresAt ? new Date(link.expiresAt).toISOString().slice(0, 16) : '');
     setFormMaxClicks(link.maxClicks ? String(link.maxClicks) : '');
 
-    setFormGeoRules(link.geoRules ? [...link.geoRules] : []);
-    setFormDeviceRules({
-      desktop: link.deviceRules?.desktop || '',
-      mobile: link.deviceRules?.mobile || '',
-      tablet: link.deviceRules?.tablet || '',
-    });
-
-    if (link.abTesting) {
-      setFormAbEnabled(link.abTesting.enabled);
-      setFormAbVariants(link.abTesting.variants.map((v) => ({ ...v })));
-    } else {
-      setFormAbEnabled(false);
-      setFormAbVariants([]);
-    }
-
     setIsCreateOpen(false);
-  };
-
-  // Add / Remove Geo Rule
-  const handleAddGeoRule = () => {
-    if (!formNewCountry.trim() || !formNewGeoUrl.trim()) return;
-    const code = formNewCountry.trim().toUpperCase();
-    if (formGeoRules.some((r) => r.countryCode === code)) {
-      setFormError(`Geo rule for country ${code} already exists.`);
-      return;
-    }
-    setFormGeoRules([...formGeoRules, { countryCode: code, destinationUrl: formNewGeoUrl.trim() }]);
-    setFormNewCountry('');
-    setFormNewGeoUrl('');
-    setFormError(null);
-  };
-
-  const handleRemoveGeoRule = (code: string) => {
-    setFormGeoRules(formGeoRules.filter((r) => r.countryCode !== code));
-  };
-
-  // Add / Remove / Update A/B Variant
-  const handleAddAbVariant = () => {
-    const nextIdx = formAbVariants.length + 1;
-    const newVariant: IAbVariant = {
-      id: `var_${Date.now()}_${nextIdx}`,
-      name: `Variant ${String.fromCharCode(65 + formAbVariants.length)}`,
-      destinationUrl: '',
-      weight: 50,
-      clicks: 0,
-    };
-    setFormAbVariants([...formAbVariants, newVariant]);
-  };
-
-  const handleUpdateAbVariant = (idx: number, field: keyof IAbVariant, value: string | number) => {
-    const updated = [...formAbVariants];
-    updated[idx] = { ...updated[idx], [field]: value };
-    setFormAbVariants(updated);
-  };
-
-  const handleRemoveAbVariant = (idx: number) => {
-    setFormAbVariants(formAbVariants.filter((_, i) => i !== idx));
   };
 
   // Submission
@@ -322,18 +182,6 @@ export function MyLinksPage() {
     if (!formUrl) {
       setFormError('Destination URL is required.');
       return;
-    }
-
-    if (formAbEnabled) {
-      if (formAbVariants.length < 2) {
-        setFormError('A/B Testing requires at least 2 variants.');
-        return;
-      }
-      const sumWeight = formAbVariants.reduce((sum, v) => sum + Number(v.weight || 0), 0);
-      if (sumWeight !== 100) {
-        setFormError(`Total A/B variant weights must sum to 100%. Current sum: ${sumWeight}%`);
-        return;
-      }
     }
 
     try {
@@ -350,13 +198,6 @@ export function MyLinksPage() {
         startsAt: formStartsAt ? new Date(formStartsAt).toISOString() : null,
         expiresAt: formExpiresAt ? new Date(formExpiresAt).toISOString() : null,
         maxClicks: formMaxClicks ? parseInt(formMaxClicks, 10) : null,
-        geoRules: formGeoRules.length > 0 ? formGeoRules : undefined,
-        deviceRules: {
-          desktop: formDeviceRules.desktop?.trim() || undefined,
-          mobile: formDeviceRules.mobile?.trim() || undefined,
-          tablet: formDeviceRules.tablet?.trim() || undefined,
-        },
-        abTesting: formAbEnabled ? { enabled: true, variants: formAbVariants } : undefined,
       };
 
       const res = await linkApi.createLink(payload);
@@ -373,9 +214,6 @@ export function MyLinksPage() {
           startsAt: payload.startsAt || undefined,
           expiresAt: payload.expiresAt || undefined,
           maxClicks: payload.maxClicks || undefined,
-          geoRules: payload.geoRules,
-          deviceRules: payload.deviceRules,
-          abTesting: payload.abTesting,
           clicks: 0,
           tags: payload.tags || [],
           notes: payload.notes,
@@ -399,18 +237,6 @@ export function MyLinksPage() {
     if (!editingLink) return;
     setFormError(null);
 
-    if (formAbEnabled) {
-      if (formAbVariants.length < 2) {
-        setFormError('A/B Testing requires at least 2 variants.');
-        return;
-      }
-      const sumWeight = formAbVariants.reduce((sum, v) => sum + Number(v.weight || 0), 0);
-      if (sumWeight !== 100) {
-        setFormError(`Total A/B variant weights must sum to 100%. Current sum: ${sumWeight}%`);
-        return;
-      }
-    }
-
     try {
       setFormSaving(true);
       const tagsArray = formTags.split(',').map((t) => t.trim()).filter(Boolean);
@@ -424,16 +250,6 @@ export function MyLinksPage() {
         startsAt: formStartsAt ? new Date(formStartsAt).toISOString() : null,
         expiresAt: formExpiresAt ? new Date(formExpiresAt).toISOString() : null,
         maxClicks: formMaxClicks ? parseInt(formMaxClicks, 10) : null,
-        geoRules: formGeoRules,
-        deviceRules: {
-          desktop: formDeviceRules.desktop?.trim() || undefined,
-          mobile: formDeviceRules.mobile?.trim() || undefined,
-          tablet: formDeviceRules.tablet?.trim() || undefined,
-        },
-        abTesting: {
-          enabled: formAbEnabled,
-          variants: formAbVariants,
-        },
       };
 
       if (formRemovePassword) {
@@ -481,6 +297,20 @@ export function MyLinksPage() {
     setLinks(links.filter((l) => !selectedIds.has(l._id)));
     setSelectedIds(new Set());
     setIsBulkDeleteOpen(false);
+  };
+
+  const handleDeleteAllConfirm = async () => {
+    const ids = links.map((l) => l._id);
+    if (ids.length > 0) {
+      try {
+        await linkApi.bulkActions({ linkIds: ids, action: 'delete' });
+      } catch {
+        // fallback
+      }
+    }
+    setLinks([]);
+    setSelectedIds(new Set());
+    setIsDeleteAllOpen(false);
   };
 
   const handleBulkStatus = async (status: 'activate' | 'deactivate' | 'archive') => {
@@ -605,7 +435,6 @@ export function MyLinksPage() {
       }
       if (statusFilter === 'all') return true;
       if (statusFilter === 'password') return !!l.isPasswordProtected;
-      if (statusFilter === 'ab') return !!l.abTesting?.enabled;
       if (statusFilter === 'scheduled') return l.startsAt && new Date(l.startsAt) > now;
       if (statusFilter === 'expired') return l.expiresAt && new Date(l.expiresAt) <= now;
       if (statusFilter === 'limit') return l.maxClicks && l.clicks >= l.maxClicks;
@@ -645,6 +474,18 @@ export function MyLinksPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {links.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsDeleteAllOpen(true)}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 border-red-200 dark:border-red-900/50"
+              leftIcon={<Trash2 className="w-3.5 h-3.5 text-red-500" />}
+            >
+              Delete All
+            </Button>
+          )}
+
           <Button
             variant="outline"
             size="sm"
@@ -706,7 +547,6 @@ export function MyLinksPage() {
               <option value="expired">Expired</option>
               <option value="limit">Limit Reached</option>
               <option value="password">Password Protected</option>
-              <option value="ab">A/B Testing</option>
               <option value="inactive">Inactive</option>
               <option value="archived">Archived</option>
             </select>
@@ -825,9 +665,16 @@ export function MyLinksPage() {
                           </span>
                         </div>
                         <div className="flex items-center gap-2 text-xs font-mono">
-                          <span className="text-zinc-700 dark:text-zinc-300 font-medium">
-                            breakify.site/{link.shortCode}
-                          </span>
+                          <a
+                            href={getShortUrl(link.shortCode)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-zinc-700 dark:text-zinc-300 font-medium hover:text-blue-600 dark:hover:text-blue-400 hover:underline inline-flex items-center gap-1 group/link"
+                            title="Open shortened redirect destination in new tab"
+                          >
+                            <span>{getShortDisplay(link.shortCode)}</span>
+                            <ExternalLink className="w-3 h-3 text-zinc-400 group-hover/link:text-blue-500" />
+                          </a>
                           <button
                             onClick={() => handleCopy(link.shortCode)}
                             className="text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 p-0.5 rounded transition-colors"
@@ -898,37 +745,6 @@ export function MyLinksPage() {
                           </span>
                         )}
 
-                        {link.geoRules && link.geoRules.length > 0 && (
-                          <span
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
-                            title={`Geo Rules: ${link.geoRules.map((g) => g.countryCode).join(', ')}`}
-                          >
-                            <Globe className="w-3 h-3 text-zinc-500" />
-                            {link.geoRules.length} Geo
-                          </span>
-                        )}
-
-                        {link.deviceRules &&
-                          (link.deviceRules.mobile || link.deviceRules.desktop || link.deviceRules.tablet) && (
-                            <span
-                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
-                              title="Device specific routing"
-                            >
-                              <Smartphone className="w-3 h-3 text-zinc-500" />
-                              Device
-                            </span>
-                          )}
-
-                        {link.abTesting?.enabled && (
-                          <span
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
-                            title={`A/B Testing: ${link.abTesting.variants.length} variants`}
-                          >
-                            <Split className="w-3 h-3 text-zinc-500" />
-                            A/B ({link.abTesting.variants.length})
-                          </span>
-                        )}
-
                         {!link.isPasswordProtected &&
                           !link.startsAt &&
                           !link.expiresAt &&
@@ -984,6 +800,15 @@ export function MyLinksPage() {
                           title="View link details"
                         >
                           <Info className="w-3.5 h-3.5 text-zinc-500" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="px-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
+                          onClick={() => setLinkToDelete(link)}
+                          title="Delete link"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-red-500" />
                         </Button>
                         <Dropdown
                           trigger={
@@ -1161,30 +986,6 @@ export function MyLinksPage() {
               <Clock className="w-3 h-3" />
               Schedule & Limits
             </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('geo-device')}
-              className={`px-3 py-1.5 rounded-md font-medium transition-colors flex items-center gap-1.5 ${
-                activeTab === 'geo-device'
-                  ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                  : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100'
-              }`}
-            >
-              <Globe className="w-3 h-3" />
-              Geo & Device
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('ab')}
-              className={`px-3 py-1.5 rounded-md font-medium transition-colors flex items-center gap-1.5 ${
-                activeTab === 'ab'
-                  ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                  : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100'
-              }`}
-            >
-              <Split className="w-3 h-3" />
-              A/B Testing
-            </button>
           </div>
 
           {/* TAB 1: GENERAL */}
@@ -1298,196 +1099,6 @@ export function MyLinksPage() {
               />
             </div>
           )}
-
-          {/* TAB 4: GEO & DEVICE */}
-          {activeTab === 'geo-device' && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                  Country / Region Redirection
-                </div>
-                <p className="text-[11px] text-zinc-500">
-                  Route traffic based on visitor country (ISO 3166-1 alpha-2, e.g. US, GB, DE).
-                </p>
-
-                <div className="flex gap-2 items-center">
-                  <input
-                    type="text"
-                    maxLength={2}
-                    placeholder="US"
-                    value={formNewCountry}
-                    onChange={(e) => setFormNewCountry(e.target.value.toUpperCase())}
-                    className="w-16 px-2.5 py-1.5 text-xs font-mono rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
-                  />
-                  <input
-                    type="url"
-                    placeholder="https://us.example.com/landing"
-                    value={formNewGeoUrl}
-                    onChange={(e) => setFormNewGeoUrl(e.target.value)}
-                    className="flex-1 px-2.5 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
-                  />
-                  <Button variant="outline" size="sm" onClick={handleAddGeoRule}>
-                    Add Rule
-                  </Button>
-                </div>
-
-                {formGeoRules.length > 0 && (
-                  <div className="space-y-1.5 pt-2">
-                    {formGeoRules.map((rule) => (
-                      <div
-                        key={rule.countryCode}
-                        className="flex items-center justify-between p-2 rounded border border-zinc-200 dark:border-zinc-800 text-xs font-mono"
-                      >
-                        <span className="font-bold text-zinc-900 dark:text-zinc-100">
-                          {rule.countryCode} &rarr; {rule.destinationUrl}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveGeoRule(rule.countryCode)}
-                          className="text-zinc-400 hover:text-red-500"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
-                <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                  Device Redirection Rules
-                </div>
-                <Input
-                  label="Desktop Destination (Optional)"
-                  placeholder="https://desktop.example.com"
-                  value={formDeviceRules.desktop || ''}
-                  onChange={(e) =>
-                    setFormDeviceRules({ ...formDeviceRules, desktop: e.target.value })
-                  }
-                />
-                <Input
-                  label="Mobile Destination (Optional)"
-                  placeholder="https://mobile.example.com"
-                  value={formDeviceRules.mobile || ''}
-                  onChange={(e) =>
-                    setFormDeviceRules({ ...formDeviceRules, mobile: e.target.value })
-                  }
-                />
-                <Input
-                  label="Tablet Destination (Optional)"
-                  placeholder="https://tablet.example.com"
-                  value={formDeviceRules.tablet || ''}
-                  onChange={(e) =>
-                    setFormDeviceRules({ ...formDeviceRules, tablet: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-          )}
-
-          {/* TAB 5: A/B TESTING */}
-          {activeTab === 'ab' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40">
-                <div className="space-y-0.5">
-                  <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                    Enable A/B Destination Split
-                  </div>
-                  <div className="text-[11px] text-zinc-500">
-                    Split visitors across multiple destination URLs by percentage weight.
-                  </div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={formAbEnabled}
-                  onChange={(e) => {
-                    const enabled = e.target.checked;
-                    setFormAbEnabled(enabled);
-                    if (enabled && formAbVariants.length === 0) {
-                      setFormAbVariants([
-                        { id: 'v1', name: 'Variant A', destinationUrl: formUrl, weight: 50, clicks: 0 },
-                        { id: 'v2', name: 'Variant B', destinationUrl: '', weight: 50, clicks: 0 },
-                      ]);
-                    }
-                  }}
-                  className="rounded border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:ring-0 cursor-pointer"
-                />
-              </div>
-
-              {formAbEnabled && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                      Variants ({formAbVariants.length})
-                    </span>
-                    <Button variant="outline" size="sm" onClick={handleAddAbVariant}>
-                      Add Variant
-                    </Button>
-                  </div>
-
-                  {formAbVariants.map((v, idx) => (
-                    <div
-                      key={v.id || idx}
-                      className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 space-y-2 text-xs"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <input
-                          type="text"
-                          value={v.name}
-                          onChange={(e) => handleUpdateAbVariant(idx, 'name', e.target.value)}
-                          className="font-medium text-xs px-2 py-1 rounded border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 w-36"
-                          placeholder="Variant Name"
-                        />
-                        <div className="flex items-center gap-1">
-                          <span className="text-[11px] text-zinc-500">Weight:</span>
-                          <input
-                            type="number"
-                            min={0}
-                            max={100}
-                            value={v.weight}
-                            onChange={(e) =>
-                              handleUpdateAbVariant(idx, 'weight', parseInt(e.target.value || '0', 10))
-                            }
-                            className="w-14 px-1.5 py-1 font-mono text-right text-xs rounded border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
-                          />
-                          <span className="text-xs">%</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveAbVariant(idx)}
-                            className="p-1 text-zinc-400 hover:text-red-500 ml-1"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                      <input
-                        type="url"
-                        placeholder="https://variant-destination.com"
-                        value={v.destinationUrl}
-                        onChange={(e) => handleUpdateAbVariant(idx, 'destinationUrl', e.target.value)}
-                        className="w-full px-2.5 py-1.5 text-xs font-mono rounded border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
-                      />
-                    </div>
-                  ))}
-
-                  <div className="text-right text-[11px] font-mono text-zinc-500">
-                    Total Weight:{' '}
-                    <span
-                      className={`font-bold ${
-                        formAbVariants.reduce((sum, v) => sum + (v.weight || 0), 0) === 100
-                          ? 'text-emerald-500'
-                          : 'text-amber-500'
-                      }`}
-                    >
-                      {formAbVariants.reduce((sum, v) => sum + (v.weight || 0), 0)}%
-                    </span>{' '}
-                    / 100%
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </Dialog>
 
@@ -1496,7 +1107,7 @@ export function MyLinksPage() {
         isOpen={!!editingLink}
         onClose={() => setEditingLink(null)}
         title="Edit Short Link & Advanced Rules"
-        description={editingLink ? `breakify.site/${editingLink.shortCode}` : ''}
+        description={editingLink ? getShortDisplay(editingLink.shortCode) : ''}
         maxWidth="lg"
         footer={
           <>
@@ -1558,30 +1169,6 @@ export function MyLinksPage() {
             >
               <Clock className="w-3 h-3" />
               Schedule & Limits
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('geo-device')}
-              className={`px-3 py-1.5 rounded-md font-medium transition-colors flex items-center gap-1.5 ${
-                activeTab === 'geo-device'
-                  ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                  : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100'
-              }`}
-            >
-              <Globe className="w-3 h-3" />
-              Geo & Device
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('ab')}
-              className={`px-3 py-1.5 rounded-md font-medium transition-colors flex items-center gap-1.5 ${
-                activeTab === 'ab'
-                  ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                  : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100'
-              }`}
-            >
-              <Split className="w-3 h-3" />
-              A/B Testing
             </button>
           </div>
 
@@ -1694,184 +1281,6 @@ export function MyLinksPage() {
               />
             </div>
           )}
-
-          {/* TAB 4: GEO & DEVICE */}
-          {activeTab === 'geo-device' && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                  Country / Region Rules
-                </div>
-                <div className="flex gap-2 items-center">
-                  <input
-                    type="text"
-                    maxLength={2}
-                    placeholder="US"
-                    value={formNewCountry}
-                    onChange={(e) => setFormNewCountry(e.target.value.toUpperCase())}
-                    className="w-16 px-2.5 py-1.5 text-xs font-mono rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
-                  />
-                  <input
-                    type="url"
-                    placeholder="https://us.example.com"
-                    value={formNewGeoUrl}
-                    onChange={(e) => setFormNewGeoUrl(e.target.value)}
-                    className="flex-1 px-2.5 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
-                  />
-                  <Button variant="outline" size="sm" onClick={handleAddGeoRule}>
-                    Add
-                  </Button>
-                </div>
-                {formGeoRules.map((rule) => (
-                  <div
-                    key={rule.countryCode}
-                    className="flex items-center justify-between p-2 rounded border border-zinc-200 dark:border-zinc-800 text-xs font-mono"
-                  >
-                    <span>
-                      {rule.countryCode} &rarr; {rule.destinationUrl}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveGeoRule(rule.countryCode)}
-                      className="text-zinc-400 hover:text-red-500"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              <div className="space-y-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
-                <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                  Device Redirection Rules
-                </div>
-                <Input
-                  label="Desktop Destination"
-                  value={formDeviceRules.desktop || ''}
-                  onChange={(e) =>
-                    setFormDeviceRules({ ...formDeviceRules, desktop: e.target.value })
-                  }
-                />
-                <Input
-                  label="Mobile Destination"
-                  value={formDeviceRules.mobile || ''}
-                  onChange={(e) =>
-                    setFormDeviceRules({ ...formDeviceRules, mobile: e.target.value })
-                  }
-                />
-                <Input
-                  label="Tablet Destination"
-                  value={formDeviceRules.tablet || ''}
-                  onChange={(e) =>
-                    setFormDeviceRules({ ...formDeviceRules, tablet: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-          )}
-
-          {/* TAB 5: A/B TESTING */}
-          {activeTab === 'ab' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40">
-                <div className="space-y-0.5">
-                  <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                    Enable A/B Testing
-                  </div>
-                  <div className="text-[11px] text-zinc-500">
-                    Split incoming traffic across multiple destinations.
-                  </div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={formAbEnabled}
-                  onChange={(e) => {
-                    const enabled = e.target.checked;
-                    setFormAbEnabled(enabled);
-                    if (enabled && formAbVariants.length === 0) {
-                      setFormAbVariants([
-                        { id: 'v1', name: 'Variant A', destinationUrl: formUrl, weight: 50, clicks: 0 },
-                        { id: 'v2', name: 'Variant B', destinationUrl: '', weight: 50, clicks: 0 },
-                      ]);
-                    }
-                  }}
-                  className="rounded border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:ring-0 cursor-pointer"
-                />
-              </div>
-
-              {formAbEnabled && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                      Variants ({formAbVariants.length})
-                    </span>
-                    <Button variant="outline" size="sm" onClick={handleAddAbVariant}>
-                      Add Variant
-                    </Button>
-                  </div>
-
-                  {formAbVariants.map((v, idx) => (
-                    <div
-                      key={v.id || idx}
-                      className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 space-y-2 text-xs"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <input
-                          type="text"
-                          value={v.name}
-                          onChange={(e) => handleUpdateAbVariant(idx, 'name', e.target.value)}
-                          className="font-medium text-xs px-2 py-1 rounded border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 w-36"
-                          placeholder="Variant Name"
-                        />
-                        <div className="flex items-center gap-1">
-                          <span className="text-[11px] text-zinc-500">Weight:</span>
-                          <input
-                            type="number"
-                            min={0}
-                            max={100}
-                            value={v.weight}
-                            onChange={(e) =>
-                              handleUpdateAbVariant(idx, 'weight', parseInt(e.target.value || '0', 10))
-                            }
-                            className="w-14 px-1.5 py-1 font-mono text-right text-xs rounded border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
-                          />
-                          <span className="text-xs">%</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveAbVariant(idx)}
-                            className="p-1 text-zinc-400 hover:text-red-500 ml-1"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                      <input
-                        type="url"
-                        placeholder="https://variant-destination.com"
-                        value={v.destinationUrl}
-                        onChange={(e) => handleUpdateAbVariant(idx, 'destinationUrl', e.target.value)}
-                        className="w-full px-2.5 py-1.5 text-xs font-mono rounded border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
-                      />
-                    </div>
-                  ))}
-
-                  <div className="text-right text-[11px] font-mono text-zinc-500">
-                    Total Weight:{' '}
-                    <span
-                      className={`font-bold ${
-                        formAbVariants.reduce((sum, v) => sum + (v.weight || 0), 0) === 100
-                          ? 'text-emerald-500'
-                          : 'text-amber-500'
-                      }`}
-                    >
-                      {formAbVariants.reduce((sum, v) => sum + (v.weight || 0), 0)}%
-                    </span>{' '}
-                    / 100%
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </Dialog>
 
@@ -1896,7 +1305,14 @@ export function MyLinksPage() {
                 Short URL
               </div>
               <div className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center justify-between">
-                <span>https://breakify.site/{viewingLink.shortCode}</span>
+                <a
+                  href={getShortUrl(viewingLink.shortCode)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline hover:text-blue-600 dark:hover:text-blue-400"
+                >
+                  {getShortUrl(viewingLink.shortCode)}
+                </a>
                 <button
                   onClick={() => handleCopy(viewingLink.shortCode)}
                   className="p-1 hover:text-zinc-600 dark:hover:text-zinc-300"
@@ -1968,98 +1384,6 @@ export function MyLinksPage() {
               </div>
             )}
 
-            {/* A/B Testing Results */}
-            {viewingLink.abTesting?.enabled && (
-              <div className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 space-y-2">
-                <div className="text-[11px] text-zinc-400 uppercase tracking-wider font-semibold flex items-center gap-1.5">
-                  <Split className="w-3.5 h-3.5" />
-                  A/B Testing Variants
-                </div>
-                <div className="space-y-1.5">
-                  {viewingLink.abTesting.variants.map((v) => (
-                    <div
-                      key={v.id}
-                      className="p-2 rounded bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 font-mono flex items-center justify-between"
-                    >
-                      <div className="truncate max-w-[200px]">
-                        <span className="font-semibold text-zinc-900 dark:text-zinc-100 mr-2">
-                          {v.name} ({v.weight}%)
-                        </span>
-                        <span className="text-[10px] text-zinc-400">{v.destinationUrl}</span>
-                      </div>
-                      <div className="font-bold text-zinc-900 dark:text-zinc-100">
-                        {v.clicks.toLocaleString()} clicks
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Geo Rules */}
-            {viewingLink.geoRules && viewingLink.geoRules.length > 0 && (
-              <div className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 space-y-2">
-                <div className="text-[11px] text-zinc-400 uppercase tracking-wider font-semibold flex items-center gap-1.5">
-                  <Globe className="w-3.5 h-3.5" />
-                  Country Routing Rules
-                </div>
-                <div className="space-y-1">
-                  {viewingLink.geoRules.map((rule) => (
-                    <div
-                      key={rule.countryCode}
-                      className="p-2 rounded bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 font-mono flex items-center justify-between"
-                    >
-                      <span className="font-bold text-zinc-900 dark:text-zinc-100">
-                        {rule.countryCode}
-                      </span>
-                      <span className="text-zinc-500 truncate max-w-[240px]">
-                        {rule.destinationUrl}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Device Rules */}
-            {viewingLink.deviceRules &&
-              (viewingLink.deviceRules.mobile ||
-                viewingLink.deviceRules.desktop ||
-                viewingLink.deviceRules.tablet) && (
-                <div className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 space-y-2">
-                  <div className="text-[11px] text-zinc-400 uppercase tracking-wider font-semibold flex items-center gap-1.5">
-                    <Smartphone className="w-3.5 h-3.5" />
-                    Device Routing Rules
-                  </div>
-                  <div className="space-y-1 font-mono">
-                    {viewingLink.deviceRules.desktop && (
-                      <div className="flex justify-between p-1.5 bg-zinc-50 dark:bg-zinc-900/40 rounded border border-zinc-200 dark:border-zinc-800">
-                        <span className="text-zinc-400">Desktop:</span>
-                        <span className="truncate max-w-[200px] text-zinc-700 dark:text-zinc-300">
-                          {viewingLink.deviceRules.desktop}
-                        </span>
-                      </div>
-                    )}
-                    {viewingLink.deviceRules.mobile && (
-                      <div className="flex justify-between p-1.5 bg-zinc-50 dark:bg-zinc-900/40 rounded border border-zinc-200 dark:border-zinc-800">
-                        <span className="text-zinc-400">Mobile:</span>
-                        <span className="truncate max-w-[200px] text-zinc-700 dark:text-zinc-300">
-                          {viewingLink.deviceRules.mobile}
-                        </span>
-                      </div>
-                    )}
-                    {viewingLink.deviceRules.tablet && (
-                      <div className="flex justify-between p-1.5 bg-zinc-50 dark:bg-zinc-900/40 rounded border border-zinc-200 dark:border-zinc-800">
-                        <span className="text-zinc-400">Tablet:</span>
-                        <span className="truncate max-w-[200px] text-zinc-700 dark:text-zinc-300">
-                          {viewingLink.deviceRules.tablet}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
             {/* Notes */}
             {viewingLink.notes && (
               <div className="space-y-1 pt-1">
@@ -2081,7 +1405,7 @@ export function MyLinksPage() {
         title="Move Link to Recycle Bin"
         message={
           linkToDelete
-            ? `Are you sure you want to delete breakify.site/${linkToDelete.shortCode}? It will be suspended and moved to your Recycle Bin for 30 days, where you can restore it anytime.`
+            ? `Are you sure you want to delete ${getShortDisplay(linkToDelete.shortCode)}? It will be suspended and moved to your Recycle Bin for 30 days, where you can restore it anytime.`
             : ''
         }
         confirmLabel="Move to Recycle Bin"
@@ -2096,6 +1420,17 @@ export function MyLinksPage() {
         title={`Move ${selectedIds.size} Links to Recycle Bin`}
         message={`All ${selectedIds.size} selected short URLs will be moved to the Recycle Bin and temporarily suspended.`}
         confirmLabel="Move to Recycle Bin"
+        isDestructive={true}
+      />
+
+      {/* Delete All Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={isDeleteAllOpen}
+        onClose={() => setIsDeleteAllOpen(false)}
+        onConfirm={handleDeleteAllConfirm}
+        title="Move All Links to Recycle Bin"
+        message={`Are you sure you want to delete all ${links.length} links? They will be moved to your Recycle Bin for 30 days.`}
+        confirmLabel="Delete All Links"
         isDestructive={true}
       />
 
@@ -2204,7 +1539,7 @@ export function MyLinksPage() {
         isOpen={!!qrModalLink}
         onClose={() => setQrModalLink(null)}
         title="Dynamic QR Code"
-        description={qrModalLink ? `breakify.site/${qrModalLink.shortCode}` : ''}
+        description={qrModalLink ? getShortDisplay(qrModalLink.shortCode) : ''}
         maxWidth="sm"
         footer={
           <Button variant="outline" size="sm" onClick={() => setQrModalLink(null)}>
@@ -2225,7 +1560,14 @@ export function MyLinksPage() {
               />
             </div>
             <div className="text-xs font-mono text-zinc-600 dark:text-zinc-400">
-              https://breakify.site/{qrModalLink.shortCode}?src=qr
+              <a
+                href={getShortUrl(qrModalLink.shortCode)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline hover:text-blue-600 dark:hover:text-blue-400"
+              >
+                {getShortUrl(qrModalLink.shortCode)}?src=qr
+              </a>
             </div>
             <div className="flex gap-2">
               <a

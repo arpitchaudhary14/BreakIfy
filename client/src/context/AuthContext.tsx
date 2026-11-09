@@ -66,8 +66,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (name: string, email: string, pass: string): Promise<string> => {
     const res = await authApi.register({ name, email, password: pass });
-    setUser(res.user);
-    return res.message;
+    // Do not auto-login: enforce Register -> Login -> Application flow
+    return res.message || 'Registration successful. Please sign in to continue.';
   };
 
   const googleLogin = async (idToken: string) => {

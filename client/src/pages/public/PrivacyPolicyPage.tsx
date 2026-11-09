@@ -4,9 +4,10 @@ import { Button } from '../../components/ui/Button';
 
 interface PrivacyPolicyPageProps {
   onBack: () => void;
+  onNavigateToHome?: () => void;
 }
 
-export function PrivacyPolicyPage({ onBack }: PrivacyPolicyPageProps) {
+export function PrivacyPolicyPage({ onBack, onNavigateToHome }: PrivacyPolicyPageProps) {
   return (
     <div className="min-h-screen bg-mono-canvas dark:bg-mono-canvas-dark text-zinc-900 dark:text-zinc-100 font-sans selection:bg-zinc-800 selection:text-white dark:selection:bg-zinc-200 dark:selection:text-zinc-900">
       {/* Top Bar */}
@@ -21,7 +22,7 @@ export function PrivacyPolicyPage({ onBack }: PrivacyPolicyPageProps) {
           </button>
 
           <div
-            onClick={onBack}
+            onClick={onNavigateToHome || onBack}
             className="flex items-center space-x-2 cursor-pointer hover:opacity-85 transition-opacity"
             title="Go to Home"
           >
@@ -54,9 +55,21 @@ export function PrivacyPolicyPage({ onBack }: PrivacyPolicyPageProps) {
               <Eye className="w-4 h-4 text-zinc-500" />
               <span>1. Overview & Commitment</span>
             </h2>
-            <p>
+            <p className="mb-4">
               BreakIfy (&quot;we&quot;, &quot;our&quot;, or &quot;the platform&quot;) is committed to transparent, privacy-centric data collection. As an open-source URL management and telemetry platform, we collect only data necessary to fulfill link routing, security scanning, bot detection, and aggregate analytics. We do not sell, rent, or monetize your personal or analytics information.
             </p>
+
+            <div className="my-4 p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-200 space-y-2">
+              <div className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
+                <ShieldCheck className="w-4 h-4" />
+                <span>Our Unbreakable Data Ethics Guarantee</span>
+              </div>
+              <ul className="text-xs sm:text-sm space-y-1.5 text-emerald-800 dark:text-emerald-300 list-disc pl-5">
+                <li><strong>We don&apos;t store your data permanently:</strong> Your deleted links and telemetry logs can be purged anytime; you retain complete control over your data lifecycle.</li>
+                <li><strong>We don&apos;t sell your data on dark web, with another companies out there in the market:</strong> We have zero commercial data broker partnerships, ad networks, or third-party exchanges.</li>
+                <li><strong>We don&apos;t use your data for training of our models and ai agents:</strong> Your destinations, custom slugs, visitor stats, and user accounts are never fed into AI models, LLMs, or training datasets.</li>
+              </ul>
+            </div>
           </section>
 
           <section>
@@ -135,7 +148,7 @@ export function PrivacyPolicyPage({ onBack }: PrivacyPolicyPageProps) {
         </div>
 
         <div className="mt-12 pt-8 border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center text-xs text-zinc-500">
-          <span>&copy; 2026 BreakIfy. Arpit Chaudhary.</span>
+          <span>&copy; 2026 BreakIfy. All Rights Reserved.</span>
           <Button variant="outline" size="sm" onClick={onBack}>
             Back to Application
           </Button>

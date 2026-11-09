@@ -1,4 +1,7 @@
 import { User } from '../models/User.model.js';
+import { Link } from '../models/Link.model.js';
+import { ActivityLog } from '../models/ActivityLog.model.js';
+import { Notification } from '../models/Notification.model.js';
 import {
   hashPassword,
   verifyPassword,
@@ -185,6 +188,9 @@ export class UserService {
     }
 
     await User.findByIdAndDelete(userId);
+    await Link.deleteMany({ ownerId: userId }).catch(() => {});
+    await ActivityLog.deleteMany({ userId }).catch(() => {});
+    await Notification.deleteMany({ userId }).catch(() => {});
 
     emailService.sendSecurityNotification(
       user.email,

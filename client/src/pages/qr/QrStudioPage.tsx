@@ -29,6 +29,7 @@ import {
   TableCell,
 } from '../../components/ui/Table';
 import { linkApi, LinkItem } from '../../services/linkApi';
+import { getShortUrl, getShortDisplay } from '../../utils/urlHelper';
 import {
   QrCustomization,
   DEFAULT_QR_CUSTOMIZATION,
@@ -114,9 +115,9 @@ export function QrStudioPage() {
 
   const activeTargetUrl = useMemo(() => {
     if (selectedLink) {
-      return `https://breakify.site/${selectedLink.shortCode}?src=qr`;
+      return `${getShortUrl(selectedLink.shortCode)}?src=qr`;
     }
-    return customText || 'https://breakify.site';
+    return customText || getShortUrl('');
   }, [selectedLink, customText]);
 
   // Live Contrast Calculation
@@ -206,7 +207,7 @@ export function QrStudioPage() {
       .map((l) => ({
         title: l.title,
         shortCode: l.shortCode,
-        targetUrl: `https://breakify.site/${l.shortCode}?src=qr`,
+        targetUrl: `${getShortUrl(l.shortCode)}?src=qr`,
       }));
 
     try {
@@ -343,7 +344,7 @@ export function QrStudioPage() {
                   >
                     {links.map((link) => (
                       <option key={link._id} value={link._id}>
-                        {link.title} (breakify.site/{link.shortCode})
+                        {link.title} ({getShortDisplay(link.shortCode)})
                       </option>
                     ))}
                   </select>
@@ -724,7 +725,7 @@ export function QrStudioPage() {
                         {link.title}
                       </TableCell>
                       <TableCell className="font-mono text-xs text-zinc-700 dark:text-zinc-300">
-                        breakify.site/{link.shortCode}
+                        {getShortDisplay(link.shortCode)}
                       </TableCell>
                       <TableCell className="text-xs text-zinc-500 truncate max-w-xs font-mono">
                         {link.originalUrl}
@@ -820,7 +821,7 @@ export function QrStudioPage() {
                           {link.title}
                         </TableCell>
                         <TableCell className="font-mono text-xs text-zinc-600 dark:text-zinc-400">
-                          breakify.site/{link.shortCode}
+                          {getShortDisplay(link.shortCode)}
                         </TableCell>
                         <TableCell className="text-right font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100">
                           {scans.toLocaleString()}

@@ -38,6 +38,7 @@ type ViewMode =
 function AppContent() {
   const { user, isLoading } = useAuth();
   const [view, setView] = useState<ViewMode>('default');
+  const [deletedNotification, setDeletedNotification] = useState<string | null>(null);
 
   // Detect URL query parameters or paths on mount
   useEffect(() => {
@@ -59,6 +60,18 @@ function AppContent() {
         setView('terms');
       } else if (pathname === '/contact' || params.get('view') === 'contact') {
         setView('contact');
+      } else {
+        // Detect potential short link codes visited on the frontend origin
+        const reservedPaths = ['/', '/login', '/register', '/api'];
+        const isReserved = reservedPaths.some((r) => pathname === r || (r !== '/' && pathname.startsWith(r + '/')));
+        if (pathname.length > 1 && !isReserved && !pathname.includes('.')) {
+          const backendRedirect =
+            window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+              ? `http://localhost:5000${pathname}${window.location.search}`
+              : `http://localhost:5000${pathname}${window.location.search}`;
+          window.location.replace(backendRedirect);
+          return;
+        }
       }
     }
   }, []);
@@ -95,7 +108,7 @@ function AppContent() {
       <>
         <RegisterPage
           onNavigateToLogin={() => setView('login')}
-          onSuccess={() => setView('dashboard')}
+          onSuccess={() => setView('login')}
           onNavigateToHome={() => setView('default')}
         />
         <CookieBanner onOpenPrivacyPolicy={() => setView('privacy')} />
@@ -136,7 +149,10 @@ function AppContent() {
   if (view === 'privacy') {
     return (
       <>
-        <PrivacyPolicyPage onBack={() => setView(user ? 'dashboard' : 'default')} />
+        <PrivacyPolicyPage
+          onBack={() => setView(user ? 'dashboard' : 'default')}
+          onNavigateToHome={() => setView('landing')}
+        />
         <CookieBanner onOpenPrivacyPolicy={() => setView('privacy')} />
       </>
     );
@@ -145,7 +161,10 @@ function AppContent() {
   if (view === 'terms') {
     return (
       <>
-        <TermsPage onBack={() => setView(user ? 'dashboard' : 'default')} />
+        <TermsPage
+          onBack={() => setView(user ? 'dashboard' : 'default')}
+          onNavigateToHome={() => setView('landing')}
+        />
         <CookieBanner onOpenPrivacyPolicy={() => setView('privacy')} />
       </>
     );
@@ -154,14 +173,18 @@ function AppContent() {
   if (view === 'contact') {
     return (
       <>
-        <ContactPage onBack={() => setView(user ? 'dashboard' : 'default')} />
+        <ContactPage
+          onBack={() => setView(user ? 'dashboard' : 'default')}
+          onNavigateToHome={() => setView('landing')}
+        />
         <CookieBanner onOpenPrivacyPolicy={() => setView('privacy')} />
       </>
     );
   }
 
-  // If user is NOT logged in and on 'default' or 'landing', display Landing Page
-  if (!user && (view === 'default' || view === 'landing')) {
+  // Display Landing Page if explicitly navigated to ('landing') by anyone,
+  // or as the default view for unauthenticated visitors (including after logout or deletion)
+  if (view === 'landing' || (!user && (view === 'default' || view === 'dashboard'))) {
     return (
       <>
         <LandingPage
@@ -171,6 +194,8 @@ function AppContent() {
           onNavigateToTerms={() => setView('terms')}
           onNavigateToContact={() => setView('contact')}
           onGoToDashboard={() => setView('dashboard')}
+          deletedNotification={deletedNotification}
+          onDismissNotification={() => setDeletedNotification(null)}
         />
         <CookieBanner onOpenPrivacyPolicy={() => setView('privacy')} />
       </>
@@ -182,7 +207,11 @@ function AppContent() {
     <>
       <AppShell
         onOpenAuth={() => setView('login')}
-        onNavigateToHome={() => setView('landing')}
+        onNavigateToHome={() => {
+          setView('landing');
+          window.location.hash = '';
+          window.history.replaceState(null, '', '/');
+        }}
         onNavigateToPrivacy={() => setView('privacy')}
         onNavigateToTerms={() => setView('terms')}
         onNavigateToContact={() => setView('contact')}
@@ -208,7 +237,16 @@ function AppContent() {
               return <RecycleBinPage />;
 
             case 'settings':
-              return <AccountSettingsView />;
+              return (
+                <AccountSettingsView
+                  onAccountDeleted={() => {
+                    setDeletedNotification('Your account and all associated short URLs have been permanently removed.');
+                    setView('landing');
+                    window.location.hash = '';
+                    window.history.replaceState(null, '', '/');
+                  }}
+                />
+              );
 
             default:
               return (

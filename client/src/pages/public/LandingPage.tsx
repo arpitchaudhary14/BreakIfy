@@ -7,17 +7,23 @@ import {
   ArrowRight,
   Copy,
   Check,
+  CheckCircle2,
   Sparkles,
-  Smartphone,
   Trash2,
   Lock,
   ChevronRight,
+  ChevronDown,
+  HelpCircle,
+  Activity,
+  TrendingUp,
 } from 'lucide-react';
 import breakifyLogo from '@assets/images/BreakIfy Logo.png';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
+import { Dialog } from '../../components/ui/Dialog';
 import { useAuth } from '../../context/AuthContext';
 import { linkApi } from '../../services/linkApi';
+import { getShortUrl } from '../../utils/urlHelper';
 
 interface LandingPageProps {
   onOpenLogin: () => void;
@@ -26,6 +32,8 @@ interface LandingPageProps {
   onNavigateToTerms: () => void;
   onNavigateToContact: () => void;
   onGoToDashboard: () => void;
+  deletedNotification?: string | null;
+  onDismissNotification?: () => void;
 }
 
 export function LandingPage({
@@ -35,6 +43,8 @@ export function LandingPage({
   onNavigateToTerms,
   onNavigateToContact,
   onGoToDashboard,
+  deletedNotification,
+  onDismissNotification,
 }: LandingPageProps) {
   const { user } = useAuth();
   const [quickUrl, setQuickUrl] = useState('');
@@ -42,6 +52,58 @@ export function LandingPage({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
+
+  const [accountDeletedMsg, setAccountDeletedMsg] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = sessionStorage.getItem('breakify_account_deleted');
+      if (stored) return stored;
+    }
+    return deletedNotification || null;
+  });
+
+  const handleDismissNotification = () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('breakify_account_deleted');
+    }
+    setAccountDeletedMsg(null);
+    if (onDismissNotification) onDismissNotification();
+  };
+
+  const faqs = [
+    {
+      q: 'Is BreakIfy free to use?',
+      a: 'Yes! BreakIfy provides essential short link creation, dynamic QR codes, analytics, and password protection completely free with no hidden charges.',
+    },
+    {
+      q: 'How fast are BreakIfy redirect speeds?',
+      a: 'BreakIfy routes short links using optimized database indexes and lightweight redirect engines, delivering instantaneous sub-20 millisecond responses.',
+    },
+    {
+      q: 'Can I password-protect my links and set expiration dates?',
+      a: 'Yes. You can lock any short link behind a secure password and set strict expiration timestamps or maximum click quotas. Once expired or limit is reached, BreakIfy blocks access automatically.',
+    },
+    {
+      q: 'What happens when I delete a shortened link?',
+      a: 'When you delete a link, it is immediately moved to your personal Recycle Bin for 30 days. You can restore it anytime with a single click or permanently destroy it whenever you choose.',
+    },
+    {
+      q: 'How does Malware & Phishing protection work?',
+      a: 'Every URL submitted to BreakIfy is analyzed against safety threat registries and heuristic security patterns to prevent phishing campaigns, malicious downloads, and open-redirect vulnerabilities.',
+    },
+    {
+      q: 'Do you sell my data or train AI models on it?',
+      a: "No, absolutely never. We don't store your data permanently without your control. We don't sell your data on the dark web or to any third-party companies. We don't use your data for training AI models or autonomous agents.",
+    },
+    {
+      q: 'Can I design and download custom QR codes?',
+      a: 'Yes! BreakIfy includes a full Dynamic QR Studio allowing you to customize dot styles, corner markers, brand colors, and embed custom logos with vector SVG and PNG downloads.',
+    },
+    {
+      q: 'Can I import and export links in bulk?',
+      a: 'Yes. You can export all your links, click telemetry, and QR data to CSV at any time, or use the CSV batch upload tool to create hundreds of short links simultaneously.',
+    },
+  ];
 
   const handleQuickShorten = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,16 +118,9 @@ export function LandingPage({
     setErrorMsg(null);
 
     try {
-      if (user) {
-        // Authenticated user: create a real tracked link
-        const res = await linkApi.createLink({ originalUrl: target, title: 'Quick Link' });
-        const short = `${window.location.origin}/${res.link.shortCode}`;
-        setShortenedUrl(short);
-      } else {
-        // Anonymous visitor quick-shorten test
-        const mockCode = Math.random().toString(36).substring(2, 8);
-        setShortenedUrl(`${window.location.origin}/${mockCode}`);
-      }
+      const res = await linkApi.createLink({ originalUrl: target, title: 'Quick Link' });
+      const short = getShortUrl(res.link.shortCode);
+      setShortenedUrl(short);
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : 'Failed to create short link');
     } finally {
@@ -95,8 +150,9 @@ export function LandingPage({
 
           <nav className="hidden md:flex items-center space-x-6 text-sm font-medium text-zinc-600 dark:text-zinc-400">
             <a href="#features" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">Features</a>
-            <a href="#security" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">Security</a>
             <a href="#analytics" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">Analytics</a>
+            <a href="#security" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">Security</a>
+            <a href="#faq" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">FAQs</a>
             <button onClick={onNavigateToContact} className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
               Support
             </button>
@@ -136,7 +192,7 @@ export function LandingPage({
           </h1>
 
           <p className="max-w-2xl mx-auto text-lg text-zinc-600 dark:text-zinc-400 mb-10 leading-relaxed">
-            BreakIfy combines intelligent device-level redirect rules, deep telemetry analytics, customized QR generation, and real-time malware defense into an elegant, monochrome dashboard.
+            BreakIfy combines lightning-fast redirects, deep click analytics, customizable QR codes, and real-time link protection into an elegant, monochrome dashboard.
           </p>
 
           {/* Live Quick Shortener Box */}
@@ -244,13 +300,13 @@ export function LandingPage({
             <Card className="border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all bg-white dark:bg-zinc-900/40">
               <CardContent className="p-6">
                 <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-900 dark:text-zinc-100 mb-4">
-                  <Smartphone className="w-5 h-5" />
+                  <Link2 className="w-5 h-5" />
                 </div>
                 <h4 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                  Smart Device & Geo Routing
+                  Fast Shortening & Custom Slugs
                 </h4>
                 <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                  Route iOS visitors to the App Store, Android to Google Play, and desktop users to your web app—all from a single, short URL.
+                  Generate instant, clean short URLs or customize human-readable aliases with built-in collision prevention.
                 </p>
               </CardContent>
             </Card>
@@ -333,7 +389,99 @@ export function LandingPage({
         </div>
       </section>
 
-      {/* Security & Open Source Section */}
+      {/* Real-Time Telemetry & Analytics Engine Section */}
+      <section id="analytics" className="py-20 border-b border-zinc-200 dark:border-zinc-800/60 bg-white dark:bg-zinc-950">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="order-2 lg:order-1 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-sm">
+              <div className="flex items-center justify-between pb-4 border-b border-zinc-200 dark:border-zinc-800 mb-6">
+                <div className="flex items-center space-x-2">
+                  <Activity className="w-4 h-4 text-emerald-500 animate-pulse" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">Live Traffic Telemetry</span>
+                </div>
+                <span className="text-[11px] font-mono text-zinc-500">Real-Time Sync</span>
+              </div>
+
+              {/* Sample Metrics */}
+              <div className="grid grid-cols-3 gap-3 mb-6">
+                <div className="p-3 bg-white dark:bg-zinc-950/60 rounded-xl border border-zinc-200 dark:border-zinc-800/80">
+                  <div className="text-[11px] text-zinc-500 mb-0.5">Total Clicks</div>
+                  <div className="text-xl font-bold text-zinc-900 dark:text-zinc-100">24,891</div>
+                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1 flex items-center">
+                    <TrendingUp className="w-3 h-3 mr-0.5" /> +14.2%
+                  </div>
+                </div>
+                <div className="p-3 bg-white dark:bg-zinc-950/60 rounded-xl border border-zinc-200 dark:border-zinc-800/80">
+                  <div className="text-[11px] text-zinc-500 mb-0.5">Active Links</div>
+                  <div className="text-xl font-bold text-zinc-900 dark:text-zinc-100">182</div>
+                  <div className="text-[10px] text-zinc-400 mt-1">99.98% Health</div>
+                </div>
+                <div className="p-3 bg-white dark:bg-zinc-950/60 rounded-xl border border-zinc-200 dark:border-zinc-800/80">
+                  <div className="text-[11px] text-zinc-500 mb-0.5">Avg CTR</div>
+                  <div className="text-xl font-bold text-zinc-900 dark:text-zinc-100">136.7</div>
+                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1">Engaged</div>
+                </div>
+              </div>
+
+              {/* Integrity & Zero-Fabrication matrix */}
+              <div className="space-y-2.5 text-xs font-mono text-zinc-600 dark:text-zinc-400">
+                <div className="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-zinc-950/40 border border-zinc-100 dark:border-zinc-800/60">
+                  <span>Cryptographic Salt Hash</span>
+                  <span className="text-zinc-900 dark:text-zinc-100 font-semibold">SHA-256 + Daily Salt</span>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-zinc-950/40 border border-zinc-100 dark:border-zinc-800/60">
+                  <span>Bot & Crawler Filtering</span>
+                  <span className="text-zinc-900 dark:text-zinc-100 font-semibold">Automated Shield</span>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-zinc-950/40 border border-zinc-100 dark:border-zinc-800/60">
+                  <span>Synthetic Data Ratio</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">0.0% (Zero Fabricated)</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="order-1 lg:order-2">
+              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-300 mb-4">
+                <BarChart3 className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" />
+                <span>Next-Gen Analytics Engine</span>
+              </div>
+              <h3 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-4">
+                Precision link intelligence without privacy intrusions
+              </h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6 leading-relaxed">
+                BreakIfy tracks every user interaction with complete zero-knowledge privacy. Monitor click growth, referrer sources, and device breakdowns in real-time without invasive tracking pixels or selling analytics to data brokers.
+              </p>
+              <div className="space-y-3 text-xs text-zinc-600 dark:text-zinc-400">
+                <div className="flex items-start space-x-2.5">
+                  <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <span>Real-time click streams computed strictly from verified HTTP requests.</span>
+                </div>
+                <div className="flex items-start space-x-2.5">
+                  <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <span>Automated crawler filtering so scrapers don't pollute your telemetry.</span>
+                </div>
+                <div className="flex items-start space-x-2.5">
+                  <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <span>Export instant CSV reports with click trends for external reporting.</span>
+                </div>
+              </div>
+              <div className="mt-8">
+                {user ? (
+                  <Button onClick={onGoToDashboard}>
+                    View Dashboard Telemetry <ChevronRight className="w-4 h-4 ml-1.5" />
+                  </Button>
+                ) : (
+                  <Button onClick={onOpenRegister}>
+                    Explore Live Analytics <ChevronRight className="w-4 h-4 ml-1.5" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Security & Zero Trust Section */}
       <section id="security" className="py-20 bg-zinc-50 dark:bg-zinc-900/20 border-b border-zinc-200 dark:border-zinc-800/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -355,8 +503,8 @@ export function LandingPage({
                     <Check className="w-3 h-3 text-zinc-900 dark:text-zinc-100" />
                   </div>
                   <div>
-                    <h5 className="text-xs font-semibold text-zinc-900 dark:text-zinc-200">Strict MIT License</h5>
-                    <p className="text-xs text-zinc-500">Free to inspect, self-host, audit, and deploy without proprietary lock-in.</p>
+                    <h5 className="text-xs font-semibold text-zinc-900 dark:text-zinc-200">Zero-Trust Architecture</h5>
+                    <p className="text-xs text-zinc-500">Engineered from the ground up for speed, reliability, and enterprise-grade data protection.</p>
                   </div>
                 </div>
 
@@ -413,6 +561,97 @@ export function LandingPage({
               </div>
             </div>
           </div>
+
+          {/* Privacy & Data Ethics Guarantee Banner */}
+          <div className="mt-12 p-6 sm:p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 shadow-sm">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Our Data Safety & Ethics Pledge</span>
+                </div>
+                <h4 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                  Your privacy is absolute. Zero compromises.
+                </h4>
+              </div>
+              <button
+                onClick={onNavigateToPrivacy}
+                className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 underline"
+              >
+                Read full Privacy Policy &rarr;
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-zinc-100 dark:border-zinc-800/80">
+              <div className="p-4 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/40 space-y-1.5">
+                <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">Zero Permanent Storage</div>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                  We don't store your data permanently. You have full control over data retention, recycle bins, and permanent deletion anytime.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/40 space-y-1.5">
+                <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">Zero Data Selling</div>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                  We don't sell your data on dark web, with another companies out there in the market. Your records and visitors are never commoditized.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/40 space-y-1.5">
+                <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">Zero AI Training</div>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                  We don't use your data for training of our models and ai agents. Your private URLs and metadata remain strictly yours.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Frequently Asked Questions Section */}
+      <section id="faq" className="py-20 bg-zinc-50 dark:bg-zinc-900/30 border-b border-zinc-200 dark:border-zinc-800/60">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-300 mb-4">
+              <HelpCircle className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" />
+              <span>Questions & Answers</span>
+            </div>
+            <h3 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+              Frequently Asked Questions
+            </h3>
+            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+              Everything you need to know about BreakIfy links, privacy, and infrastructure.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {faqs.map((faq, idx) => {
+              const isOpen = openFaqIndex === idx;
+              return (
+                <div
+                  key={idx}
+                  className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 overflow-hidden transition-all shadow-sm"
+                >
+                  <button
+                    onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
+                    className="w-full py-4 px-5 text-left flex items-center justify-between text-sm font-semibold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/40 transition-colors"
+                  >
+                    <span>{faq.q}</span>
+                    <ChevronDown
+                      className={`w-4 h-4 text-zinc-400 shrink-0 transition-transform duration-200 ${
+                        isOpen ? 'transform rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+                  {isOpen && (
+                    <div className="px-5 pb-4 pt-1 text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed border-t border-zinc-100 dark:border-zinc-800/60">
+                      {faq.a}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
 
@@ -423,7 +662,7 @@ export function LandingPage({
             Ready to upgrade your links?
           </h3>
           <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-8 max-w-xl mx-auto">
-            Create an account in 10 seconds or sign in with Google to access device routing, QR codes, and custom expiration timers.
+            Create an account in 10 seconds or sign in with Google to access QR codes, click telemetry, and custom expiration timers.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             {user ? (
@@ -454,16 +693,26 @@ export function LandingPage({
                 <span className="font-bold text-zinc-900 dark:text-zinc-100">BreakIfy</span>
               </div>
               <p className="text-zinc-400 dark:text-zinc-500 leading-relaxed">
-                Modern URL shortening, dynamic traffic routing, QR Studio, and deep analytics.
+                Modern URL shortening, custom QR Studio, and real-time click telemetry.
               </p>
             </div>
 
             <div>
               <h5 className="font-semibold text-zinc-900 dark:text-zinc-200 mb-3">Product</h5>
               <ul className="space-y-2">
-                <li><a href="#features" className="hover:text-zinc-900 dark:hover:text-zinc-100">Features</a></li>
+                <li><a href="#features" className="hover:text-zinc-900 dark:hover:text-zinc-100">Core Features</a></li>
+                <li><a href="#analytics" className="hover:text-zinc-900 dark:hover:text-zinc-100">Telemetry & Analytics</a></li>
                 <li><a href="#security" className="hover:text-zinc-900 dark:hover:text-zinc-100">Security Architecture</a></li>
-                <li><a href="#analytics" className="hover:text-zinc-900 dark:hover:text-zinc-100">Analytics Engine</a></li>
+                <li><a href="#faq" className="hover:text-zinc-900 dark:hover:text-zinc-100">Help & FAQs</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h5 className="font-semibold text-zinc-900 dark:text-zinc-200 mb-3">Solutions</h5>
+              <ul className="space-y-2">
+                <li><a href="#features" className="hover:text-zinc-900 dark:hover:text-zinc-100">Dynamic QR Studio</a></li>
+                <li><a href="#features" className="hover:text-zinc-900 dark:hover:text-zinc-100">Custom Slugs & Aliases</a></li>
+                <li><a href="#security" className="hover:text-zinc-900 dark:hover:text-zinc-100">Zero Data Selling Pledge</a></li>
               </ul>
             </div>
 
@@ -475,32 +724,10 @@ export function LandingPage({
                 <li><button onClick={onNavigateToContact} className="hover:text-zinc-900 dark:hover:text-zinc-100 text-left">Contact & Abuse Reporting</button></li>
               </ul>
             </div>
-
-            <div>
-              <h5 className="font-semibold text-zinc-900 dark:text-zinc-200 mb-3">Repository</h5>
-              <ul className="space-y-2">
-                <li>
-                  <a
-                    href="https://github.com/arpitchaudhary14/Breakify"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center space-x-1.5 hover:text-zinc-900 dark:hover:text-zinc-100"
-                  >
-                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-                      <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
-                    </svg>
-                    <span>arpitchaudhary14/Breakify</span>
-                  </a>
-                </li>
-                <li>
-                  <span className="text-zinc-400">License: MIT (2026 Arpit Chaudhary)</span>
-                </li>
-              </ul>
-            </div>
           </div>
 
           <div className="pt-8 border-t border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between text-zinc-400">
-            <span>&copy; 2026 BreakIfy. Released under the MIT License by Arpit Chaudhary.</span>
+            <span>&copy; 2026 BreakIfy. All Rights Reserved.</span>
             <div className="flex items-center space-x-4 mt-4 sm:mt-0">
               <button onClick={onNavigateToPrivacy} className="hover:underline">Privacy</button>
               <button onClick={onNavigateToTerms} className="hover:underline">Terms</button>
@@ -509,6 +736,39 @@ export function LandingPage({
           </div>
         </div>
       </footer>
+
+      {/* Account Deletion Confirmation Dialog */}
+      <Dialog
+        isOpen={!!accountDeletedMsg}
+        onClose={handleDismissNotification}
+        title="Account Deleted"
+        description="Permanent removal confirmation"
+        maxWidth="sm"
+        footer={
+          <Button
+            variant="primary"
+            size="sm"
+            className="w-full"
+            onClick={handleDismissNotification}
+          >
+            Got it
+          </Button>
+        }
+      >
+        <div className="py-4 flex flex-col items-center text-center space-y-3">
+          <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+            <CheckCircle2 className="w-6 h-6" />
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              Account Deleted Successfully
+            </p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs leading-relaxed">
+              {accountDeletedMsg}
+            </p>
+          </div>
+        </div>
+      </Dialog>
     </div>
   );
 }

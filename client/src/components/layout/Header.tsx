@@ -107,7 +107,10 @@ export function Header({
       label: 'Sign out',
       icon: <LogOut className="w-3.5 h-3.5" />,
       destructive: true,
-      onClick: () => logout(),
+      onClick: async () => {
+        await logout();
+        if (onNavigateToHome) onNavigateToHome();
+      },
     },
   ];
 

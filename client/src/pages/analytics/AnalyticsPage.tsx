@@ -5,18 +5,12 @@ import {
   Download,
   Filter,
   RefreshCw,
-  Globe,
-  Smartphone,
-  Compass,
   Link2,
   Shield,
-  Info,
   ExternalLink,
   Users,
   MousePointerClick,
   QrCode,
-  Laptop,
-  Tablet,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -39,6 +33,7 @@ import {
   TableCell,
 } from '../../components/ui/Table';
 import { linkApi, LinkItem } from '../../services/linkApi';
+import { getShortUrl, getShortDisplay } from '../../utils/urlHelper';
 import {
   analyticsApi,
   AnalyticsOverview,
@@ -57,7 +52,7 @@ export function AnalyticsPage() {
   // Analytics data state
   const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
   const [timeSeries, setTimeSeries] = useState<TimeSeriesPoint[]>([]);
-  const [breakdowns, setBreakdowns] = useState<AnalyticsBreakdowns | null>(null);
+  const [, setBreakdowns] = useState<AnalyticsBreakdowns | null>(null);
   const [events, setEvents] = useState<ClickEventItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -120,13 +115,6 @@ export function AnalyticsPage() {
     } finally {
       setExporting(false);
     }
-  };
-
-  const getDeviceIcon = (device: string) => {
-    const d = device.toLowerCase();
-    if (d === 'mobile') return <Smartphone className="w-3.5 h-3.5" />;
-    if (d === 'tablet') return <Tablet className="w-3.5 h-3.5" />;
-    return <Laptop className="w-3.5 h-3.5" />;
   };
 
   return (
@@ -408,112 +396,6 @@ export function AnalyticsPage() {
         )}
       </Card>
 
-      {/* Breakdowns Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Geographic Breakdown */}
-        <Card className="p-4 space-y-3">
-          <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-2">
-            <div className="flex items-center gap-2">
-              <Globe className="w-4 h-4 text-zinc-500" />
-              <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
-                Top Countries
-              </span>
-            </div>
-            <span className="text-[11px] text-zinc-400">Hits</span>
-          </div>
-
-          <div className="space-y-2 pt-1 text-xs">
-            {!breakdowns || breakdowns.countries.length === 0 ? (
-              <div className="py-6 text-center text-zinc-400 text-xs">No geo telemetry logged yet</div>
-            ) : (
-              breakdowns.countries.slice(0, 5).map((c) => (
-                <div key={c.name} className="space-y-1">
-                  <div className="flex justify-between items-center text-zinc-700 dark:text-zinc-300">
-                    <span className="font-mono font-medium">{c.name}</span>
-                    <span className="font-mono text-zinc-500">
-                      {c.count.toLocaleString()} ({c.percentage}%)
-                    </span>
-                  </div>
-                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
-                    <div
-                      className="bg-zinc-900 dark:bg-zinc-100 h-full rounded-full transition-all"
-                      style={{ width: `${Math.min(100, c.percentage)}%` }}
-                    />
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </Card>
-
-        {/* Device Breakdown */}
-        <Card className="p-4 space-y-3">
-          <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-2">
-            <div className="flex items-center gap-2">
-              <Smartphone className="w-4 h-4 text-zinc-500" />
-              <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
-                Device Distribution
-              </span>
-            </div>
-            <span className="text-[11px] text-zinc-400">Share</span>
-          </div>
-
-          <div className="space-y-2 pt-1 text-xs">
-            {!breakdowns || breakdowns.devices.length === 0 ? (
-              <div className="py-6 text-center text-zinc-400 text-xs">No device telemetry logged yet</div>
-            ) : (
-              breakdowns.devices.map((d) => (
-                <div key={d.name} className="space-y-1">
-                  <div className="flex justify-between items-center text-zinc-700 dark:text-zinc-300">
-                    <span className="capitalize flex items-center gap-1.5">
-                      {getDeviceIcon(d.name)}
-                      {d.name}
-                    </span>
-                    <span className="font-mono text-zinc-500">
-                      {d.count.toLocaleString()} ({d.percentage}%)
-                    </span>
-                  </div>
-                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
-                    <div
-                      className="bg-zinc-900 dark:bg-zinc-100 h-full rounded-full transition-all"
-                      style={{ width: `${Math.min(100, d.percentage)}%` }}
-                    />
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </Card>
-
-        {/* Referrers Breakdown */}
-        <Card className="p-4 space-y-3">
-          <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-2">
-            <div className="flex items-center gap-2">
-              <Compass className="w-4 h-4 text-zinc-500" />
-              <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
-                Top Referrers
-              </span>
-            </div>
-            <span className="text-[11px] text-zinc-400">Clicks</span>
-          </div>
-
-          <div className="space-y-2 pt-1 text-xs">
-            {!breakdowns || breakdowns.referrers.length === 0 ? (
-              <div className="py-6 text-center text-zinc-400 text-xs">No referrer telemetry logged yet</div>
-            ) : (
-              breakdowns.referrers.slice(0, 5).map((r) => (
-                <div key={r.name} className="flex justify-between items-center text-zinc-700 dark:text-zinc-300 p-1.5 rounded bg-zinc-50 dark:bg-zinc-900/40">
-                  <span className="font-mono truncate max-w-[150px]">{r.name}</span>
-                  <Badge variant="neutral" size="sm">
-                    {r.count} ({r.percentage}%)
-                  </Badge>
-                </div>
-              ))
-            )}
-          </div>
-        </Card>
-      </div>
-
       {/* Top Link Highlight (if available) */}
       {overview && overview.topLink && (
         <Card className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -529,7 +411,15 @@ export function AnalyticsPage() {
                 {overview.topLink.title}
               </div>
               <div className="text-[11px] font-mono text-zinc-500">
-                breakify.site/{overview.topLink.shortCode} &rarr; {overview.topLink.originalUrl}
+                <a
+                  href={getShortUrl(overview.topLink.shortCode)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline hover:text-blue-600 dark:hover:text-blue-400 font-semibold"
+                >
+                  {getShortDisplay(overview.topLink.shortCode)}
+                </a>{' '}
+                &rarr; {overview.topLink.originalUrl}
               </div>
             </div>
           </div>
@@ -542,7 +432,7 @@ export function AnalyticsPage() {
               <div className="text-[10px] text-zinc-400">Clicks in period</div>
             </div>
             <a
-              href={`https://breakify.site/${overview.topLink.shortCode}`}
+              href={getShortUrl(overview.topLink.shortCode)}
               target="_blank"
               rel="noopener noreferrer"
               className="p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
@@ -636,17 +526,6 @@ export function AnalyticsPage() {
           </TableBody>
         </Table>
       </Card>
-
-      {/* Privacy Notice & Estimation Methodology */}
-      <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/40 text-xs text-zinc-600 dark:text-zinc-400 space-y-1.5">
-        <div className="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-          <Info className="w-3.5 h-3.5 text-zinc-500" />
-          Visitor Privacy Architecture & Real Telemetry Guarantee
-        </div>
-        <p className="text-[11px] leading-relaxed">
-          BreakIfy securely logs visitor session identifiers, public IP addresses, and UTC timestamps for fraud detection, audit trails, and abuse prevention. Unique visitor numbers are calculated using a salted daily cryptographic hash (<code className="font-mono">SHA-256(IP + UA + Salt + Date)</code>) alongside session IDs. All analytics are computed dynamically from real database event logs — BreakIfy never generates fabricated statistics.
-        </p>
-      </div>
     </div>
   );
 }

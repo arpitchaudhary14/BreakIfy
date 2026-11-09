@@ -18,6 +18,7 @@ services:
 
   # Express Backend API
   backend:
+    image: arpit00011/breakify-backend:latest
     build:
       context: ./server
       dockerfile: Dockerfile
@@ -40,6 +41,7 @@ services:
 
   # React SPA & Nginx Reverse Proxy
   frontend:
+    image: arpit00011/breakify-frontend:latest
     build:
       context: ./client
       dockerfile: Dockerfile

@@ -1,37 +1,53 @@
 # BreakIfy
 
 > **Shorten. Track. Share.**  
-> Enterprise-grade URL shortening, smart routing, dynamic QR codes, analytics intelligence, and link management SaaS platform.
+> High-performance, privacy-conscious URL shortening, dynamic QR codes, real-time analytics intelligence, and link management platform.
 
 ---
 
-## Architecture & System Overview
-
-BreakIfy is engineered as a decoupled, modular TypeScript monorepo adhering strictly to clean architecture principles:
-
-* **Frontend (`/client`):** React 18, Vite, TypeScript, Tailwind CSS (dark-first monochrome zinc palette with light mode toggle), Recharts data visualization, Lucide React icons, and HTML-to-Canvas / jsPDF export engines.
-* **Backend (`/server`):** Node.js, Express, TypeScript, Mongoose (MongoDB), Argon2id password hashing, RFC 6238 TOTP engine, Zod payload validation, Helmet security headers, CORS with credentials, and centralized structured error handling.
-* **Database & Persistence:** MongoDB with lazy collection initialization, composite indexes, and strict schema validation.
-* **Brand Assets (`/assets`):** High-resolution source assets (including official logo `BreakIfy Logo.png`).
-* **Containerization:** Production-ready multi-stage Dockerfiles and non-root Docker Compose network topology.
+### 🌐 Live Demo Here
+👉 **[BreakIfy Live Application](https://your-live-demo-link-here.com)**  
+*(Replace this URL with your production or staging deployment link)*
 
 ---
 
-## Core Feature Matrix
+## 🐳 Docker Images
 
-| Module | Features & Capabilities |
-| :--- | :--- |
-| **Authentication & Sessions** | Email/Password with Argon2id, Google OAuth 2.0, HTTP-only JWT cookies, active session management, remote device revocation, and suspicious login detection. |
-| **Two-Factor Authentication** | RFC 6238 TOTP standard (Google Authenticator, Authy, 1Password) with scannable QR setup, manual base32 secret entry, and 10 single-use hashed recovery backup codes. |
-| **Link Management & Routing** | Short URL creation, custom slugs, scheduled activation (`startsAt`), expiration dates (`expiresAt`), click limits, password protection, Geo-IP routing, device-based routing, and A/B split testing. |
-| **QR Studio** | Dynamic and static QR code generation, foreground/background customization, read-safe contrast protection, error correction level (L/M/Q/H), bulk link QR batching, and PNG/SVG/PDF downloads. |
-| **Analytics & Intelligence** | Real-time backend event collection, privacy-conscious visitor hashing, bot filtering, time-series click trends, device breakdown, browser/OS breakdown, geographic map, referrer breakdown, and CSV export. |
-| **Productivity & Recycle Bin** | Activity audit history timeline (search, filter, bulk delete), 30-day soft-delete Recycle Bin with instant restoration, and link health checker (SSRF protected). |
-| **Security & Trust** | Multi-tier rate limiting, offline heuristic malicious URL scanner, Google Safe Browsing provider abstraction, public abuse reporting (`/abuse/report`), and CRLF injection defenses. |
+Production-ready, multi-stage Docker images are officially hosted on Docker Hub for both backend and frontend services:
+
+| Component | Docker Hub Repository | Pull Command | Status |
+| :--- | :--- | :--- | :--- |
+| **Frontend (React + Nginx)** | [arpit00011/breakify-frontend](https://hub.docker.com/r/arpit00011/breakify-frontend) | `docker pull arpit00011/breakify-frontend:latest` | `Active & Public` |
+| **Backend (Node.js API)** | [arpit00011/breakify-backend](https://hub.docker.com/r/arpit00011/breakify-backend) | `docker pull arpit00011/breakify-backend:latest` | `Active & Public` |
+
+You can run the full pre-built stack directly using Docker Compose without building from source:
+
+```bash
+# Pull latest images from Docker Hub
+docker pull arpit00011/breakify-backend:latest
+docker pull arpit00011/breakify-frontend:latest
+
+# Start all services (MongoDB + Backend + Frontend)
+docker compose up -d
+```
 
 ---
 
-## Directory Structure
+## 🚀 Key Features
+
+* **Instant Link Shortening:** Generates clean, high-entropy 7-character Base62 alphanumeric slugs (`/mvr9fFG`) with sub-20ms database-indexed redirect resolution.
+* **Custom Aliases & Slugs:** Claim branded human-readable slugs for high-visibility marketing and social campaigns.
+* **Dynamic QR Code Studio:** Generate live scannable QR codes with custom foreground/background colors, contrast safety validation, error correction levels (L/M/Q/H), and 1-click PNG and SVG downloads.
+* **Deep Real-Time Analytics:** Live tracking of link impressions, click timestamps, browser engines, operating systems, and direct one-click CSV metrics report downloads.
+* **Enterprise Authentication & 2FA:** User registration with Argon2id password hashing, RFC 6238 compliant TOTP two-factor authentication (Google Authenticator, Authy, 1Password), and 10 single-use emergency backup recovery codes.
+* **Session Management:** Inspect active devices, user-agents, IP addresses, and revoke remote sessions on demand.
+* **Recycle Bin & 30-Day Retention:** Soft-delete links to prevent accidental downtime; restore links instantly or permanently purge data with complete cleanup.
+* **Link Security Controls:** Password-protect individual links and schedule expiration dates or maximum click limits.
+* **Zero Third-Party Selling Pledge:** BreakIfy guarantees your data is never sold to brokers, advertisers, or third parties, and is never used to train machine learning models.
+
+---
+
+## 📁 Project Directory Structure
 
 ```text
 BreakIfy/
@@ -39,157 +55,212 @@ BreakIfy/
 │   └── images/
 │       └── BreakIfy Logo.png        # Official brand logo
 ├── client/                          # React + Vite + TypeScript frontend
-│   ├── public/                      # Static assets & favicon
+│   ├── public/                      # Static web assets
 │   ├── src/
 │   │   ├── __tests__/               # Frontend unit test suite
-│   │   ├── components/              # UI design system & shared modals
+│   │   ├── components/              # UI design system (Card, Dialog, Button, etc.)
+│   │   │   ├── layout/              # AppShell, Header, Sidebar, ThemeSelector
+│   │   │   └── ui/                  # Reusable accessible atomic components
 │   │   ├── context/                 # AuthContext & ThemeContext
-│   │   ├── pages/                   # Views (Dashboard, Links, QR, Analytics, History, Bin)
-│   │   ├── services/                # API client modules
-│   │   └── utils/                   # Formatters & helpers
+│   │   ├── pages/                   # Application views
+│   │   │   ├── auth/                # Login, Register, Forgot/Reset Password, 2FA
+│   │   │   ├── links/               # My Links (Create, Edit, QR, Details)
+│   │   │   ├── qr/                  # Dynamic QR Code Studio
+│   │   │   ├── analytics/           # Real-time analytics dashboard
+│   │   │   ├── history/             # Activity audit log
+│   │   │   ├── recycle-bin/         # 30-day soft-delete retention
+│   │   │   ├── settings/            # Account & security settings
+│   │   │   └── public/              # Landing page, Terms, Privacy, Contact
+│   │   ├── services/                # Axios/Fetch API clients
+│   │   └── utils/                   # Formatting & helper utilities
 │   ├── Dockerfile                   # Multi-stage production Nginx container
 │   ├── nginx.conf                   # Reverse proxy & SPA routing config
+│   ├── tailwind.config.ts           # Dark-first monochrome zinc palette
 │   └── vite.config.ts
 ├── server/                          # Express + TypeScript backend
 │   ├── src/
-│   │   ├── __tests__/               # Vitest suite (Auth, Link, QR, Analytics, Security)
+│   │   ├── __tests__/               # Vitest suite (142 unit & integration tests)
 │   │   ├── config/                  # Environment variables & constants
 │   │   ├── controllers/             # Request handlers & response formatting
 │   │   ├── middlewares/             # Auth, rate-limit, error, and validation
-│   │   ├── models/                  # Mongoose schemas (User, Link, ClickEvent, AbuseReport)
-│   │   ├── routes/                  # Express API routers
-│   │   ├── services/                # Core business logic & threat analyzers
-│   │   └── utils/                   # Argon2, TOTP, URL safety, logger
-│   └── Dockerfile                   # Multi-stage production Node runner
-├── docker-compose.yml               # Container orchestrator (isolated DB network)
-├── package.json                     # Monorepo script orchestrator
+│   │   ├── models/                  # Mongoose schemas (User, Link, ActivityLog, etc.)
+│   │   ├── routes/                  # Express REST API routers
+│   │   ├── services/                # Business logic, auth, and threat scanners
+│   │   └── utils/                   # Argon2, TOTP, QR, crypto, logger
+│   └── Dockerfile                   # Multi-stage Node.js production runner
+├── docs/                            # Architecture and deployment guides
+├── docker-compose.yml               # Multi-container production orchestration
+├── package.json                     # Monorepo root script orchestrator
 ├── DEPLOYMENT.md                    # Production hosting & DNS playbook
 ├── SECURITY.md                      # Threat model & cryptographic audit
-└── README.md
+├── .dockerignore                    # Root Docker build ignore rules
+├── .gitignore                       # Repository git ignore rules
+├── LICENSE                          # BreakIfy software license
+└── README.md                        # Project documentation
 ```
 
 ---
 
-## Getting Started
+## 🛠️ Installation & Setup
 
 ### Prerequisites
 
-* **Node.js:** v18.0.0 or higher (v20+ recommended)
-* **npm:** v9.0.0 or higher
-* **MongoDB:** Local instance running on port 27017 or MongoDB Atlas connection string.
+Ensure you have the following installed on your machine:
+* **Node.js:** `v20.x` or `v22.x` (LTS recommended)
+* **npm:** `v10.x` or later
+* **MongoDB:** `v7.0+` (local instance or MongoDB Atlas connection URI)
+* **Docker & Docker Compose:** *(Optional, for containerized deployment)*
 
-### 1. Installation
+---
 
-Install dependencies across the monorepo:
+### Method 1: Local Development Setup
 
+#### 1. Clone the Repository
 ```bash
-# Backend dependencies
-npm install --prefix server
-
-# Frontend dependencies
-npm install --prefix client
+git clone https://github.com/your-username/BreakIfy.git
+cd BreakIfy
 ```
 
-### 2. Environment Configuration
-
-Copy the example environment configurations:
-
+#### 2. Install Dependencies
+Install dependencies for both client and server:
 ```bash
-# Server configuration
+# Install root monorepo tooling
+npm install
+
+# Install backend dependencies
+cd server && npm install
+
+# Install frontend dependencies
+cd ../client && npm install
+cd ..
+```
+
+#### 3. Configure Environment Variables
+
+**Backend (`server/.env`):**
+Create `server/.env` from the provided example:
+```bash
 cp server/.env.example server/.env
-
-# Client configuration
-cp client/.env.example client/.env
 ```
-
-Ensure `server/.env` contains your MongoDB URI and secure JWT secrets:
+Update values as required:
 ```env
 PORT=5000
 NODE_ENV=development
+API_PREFIX=/api/v1
 CLIENT_URL=http://localhost:5173
 MONGODB_URI=mongodb://localhost:27017/breakify
-JWT_ACCESS_SECRET=your-32-character-access-secret-minimum
-JWT_REFRESH_SECRET=your-32-character-refresh-secret-minimum
+JWT_ACCESS_SECRET=your-32-character-random-access-secret-key
+JWT_REFRESH_SECRET=your-32-character-random-refresh-secret-key
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
+EMAIL_SERVICE=console
+EMAIL_FROM=BreakIfy Security <security@breakify.site>
 ```
 
----
-
-## Running in Development
-
-Run both the backend and frontend concurrently:
-
+**Frontend (`client/.env`):**
+Create `client/.env` from the provided example:
 ```bash
-# Terminal 1: Start backend with hot reload (Port 5000)
-npm run dev:server
-
-# Terminal 2: Start frontend Vite dev server (Port 5173)
-npm run dev:client
+cp client/.env.example client/.env
 ```
+Ensure the API endpoint is configured:
+```env
+VITE_API_BASE_URL=http://localhost:5000/api/v1
+VITE_APP_NAME=BreakIfy
+VITE_GOOGLE_CLIENT_ID=
+```
+
+#### 4. Run Development Servers
+Open two terminal windows or run the monorepo scripts from the project root:
+
+**Terminal 1 (Backend API):**
+```bash
+npm run dev:server
+# Server starts on http://localhost:5000
+```
+
+**Terminal 2 (Frontend Client):**
+```bash
+npm run dev:client
+# Frontend client starts on http://localhost:5173
+```
+
+Visit **`http://localhost:5173`** in your browser.
 
 ---
 
-## Docker Deployment
+### Method 2: Containerized Deployment (Docker Compose)
 
-To launch the entire stack (React SPA, Express API, MongoDB) in an isolated container network:
+Deploy the entire stack (MongoDB + Express Backend + React Nginx Frontend) with a single command:
 
 ```bash
 docker compose up -d --build
 ```
 
-* **Frontend:** Accessible at `http://localhost:80`
-* **API:** Accessible at `http://localhost:80/api/v1`
-* **Short Links:** Direct routing via `http://localhost:80/:shortCode`
-* **MongoDB:** Kept strictly inside the private Docker network (`breakify-net`) with zero exposed host ports for database security.
+* **Frontend:** Accessible at `http://localhost:80` (or `http://localhost`)
+* **Backend API:** Internally proxied via Nginx at `/api/v1`
+* **MongoDB:** Securely isolated inside the internal `breakify-net` bridge network (port `27017` is not exposed publicly)
+
+To stop the containers:
+```bash
+docker compose down
+```
 
 ---
 
-## Testing & Verification
+## 🧪 Testing & Quality Assurance
 
-Run the comprehensive test suite across client and server:
+BreakIfy comes with a comprehensive test suite (unit, integration, and security tests):
 
 ```bash
-# Run all 150+ unit and integration tests
-npm test
-
-# Run server unit tests individually
+# Run server test suite (Vitest - 142 tests passing)
 npm run test:server
 
-# Run frontend client unit tests
-npm run test:client
+# Run client production build & TypeScript validation
+npm run build:client
 
-# Run ESLint across all workspaces
-npm run lint
-
-# Compile production builds
+# Run full project build (both client & server)
 npm run build
 ```
 
 ---
 
-## API Documentation Summary
+## 📡 REST API Reference
 
-| Method | Endpoint | Description | Auth Required |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/:shortCode` | Public link redirection (CRLF & safety checked) | No |
-| `POST` | `/api/v1/links` | Create a shortened URL with smart routing | Optional |
-| `GET` | `/api/v1/links` | List authenticated user links with pagination | Yes |
-| `GET` | `/api/v1/links/recycle-bin` | List soft-deleted links | Yes |
-| `POST` | `/api/v1/qr/generate` | Generate customizable QR code (PNG, SVG, PDF) | Optional |
-| `GET` | `/api/v1/analytics/overview` | Fetch click trends, geo, device, and referrer metrics | Yes |
-| `POST` | `/api/v1/auth/register` | Register account | No (Rate Limited) |
-| `POST` | `/api/v1/auth/login` | Sign in (returns 2FA challenge if enabled) | No (Rate Limited) |
-| `POST` | `/api/v1/auth/2fa/verify-login` | Verify 6-digit TOTP or backup recovery code | No (Rate Limited) |
-| `POST` | `/api/v1/auth/2fa/setup` | Generate TOTP base32 secret and QR code | Yes |
-| `GET` | `/api/v1/auth/sessions` | List active sessions and connected devices | Yes |
-| `DELETE` | `/api/v1/auth/sessions` | Remote revocation of all other active sessions | Yes |
-| `POST` | `/api/v1/abuse/report` | Submit abuse or malicious link report | No (Rate Limited) |
+| Endpoint | Method | Authentication | Description |
+| :--- | :---: | :---: | :--- |
+| `POST /api/v1/auth/register` | `POST` | Public | Register new user account |
+| `POST /api/v1/auth/login` | `POST` | Public | Authenticate user with password & cookie issuance |
+| `POST /api/v1/auth/2fa/verify-login` | `POST` | Public | Verify TOTP code or emergency recovery code |
+| `POST /api/v1/auth/logout` | `POST` | Authenticated | Revoke refresh token and clear auth cookies |
+| `GET  /api/v1/auth/me` | `GET` | Authenticated | Fetch authenticated user profile & session |
+| `POST /api/v1/links` | `POST` | Optional | Create short link (guest or authenticated) |
+| `GET  /api/v1/links` | `GET` | Authenticated | List links with pagination, search, and sorting |
+| `GET  /api/v1/links/export` | `GET` | Authenticated | Export link catalog and performance metrics as CSV |
+| `PATCH /api/v1/links/:id` | `PATCH` | Authenticated | Update link destination, schedule, or password |
+| `DELETE /api/v1/links/:id` | `DELETE` | Authenticated | Soft-delete link (moves to 30-day Recycle Bin) |
+| `POST /api/v1/links/:id/restore` | `POST` | Authenticated | Restore soft-deleted link |
+| `DELETE /api/v1/links/:id/permanent` | `DELETE` | Authenticated | Permanently purge link |
+| `GET  /api/v1/qr/:linkId` | `GET` | Public | Stream dynamic QR code (PNG or SVG format) |
+| `POST /api/v1/qr/generate` | `POST` | Optional | Generate standalone custom QR code |
+| `GET  /api/v1/analytics/overview` | `GET` | Authenticated | Fetch total clicks, active counts, and trends |
+| `POST /api/v1/abuse/report` | `POST` | Public | Submit malicious URL report for moderation |
+| `DELETE /api/v1/users/account` | `DELETE` | Authenticated | Permanently delete account and all user data |
 
 ---
 
-## Security Documentation
+## 🔒 Security Architecture
 
-See [`SECURITY.md`](./SECURITY.md) for detailed threat modeling, cryptographic standards, heuristic scanner boundaries, and abuse response playbooks.
+BreakIfy implements a defense-in-depth posture:
+* **Argon2id** password hashing (`memoryCost: 64MB`, `timeCost: 3`, `parallelism: 1`).
+* **RFC 6238 TOTP** two-factor authentication with SHA-256 hashed recovery codes.
+* **HTTP-Only, SameSite=Lax** cookies for refresh token isolation.
+* **SSRF Prevention:** Private subnets (`10.0.0.0/8`, `192.168.0.0/16`, `127.0.0.0/8`) and cloud metadata endpoints (`169.254.169.254`) are strictly blocked.
+* **CRLF Injection Defenses:** Destructive header characters are stripped prior to HTTP 302/307 redirects.
 
-## Production Deployment Playbook
+For detailed security policies, refer to [`SECURITY.md`](SECURITY.md).
 
-See [`DEPLOYMENT.md`](./DEPLOYMENT.md) for DNS setup, SSL certificates, Nginx reverse proxy configuration, and cloud hosting deployment steps.
+---
+
+## 📄 License
+
+This project is licensed under the terms of the BreakIfy License Agreement. See [`LICENSE`](LICENSE) for details.

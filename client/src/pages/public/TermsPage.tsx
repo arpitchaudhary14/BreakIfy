@@ -4,9 +4,10 @@ import { Button } from '../../components/ui/Button';
 
 interface TermsPageProps {
   onBack: () => void;
+  onNavigateToHome?: () => void;
 }
 
-export function TermsPage({ onBack }: TermsPageProps) {
+export function TermsPage({ onBack, onNavigateToHome }: TermsPageProps) {
   return (
     <div className="min-h-screen bg-mono-canvas dark:bg-mono-canvas-dark text-zinc-900 dark:text-zinc-100 font-sans selection:bg-zinc-800 selection:text-white dark:selection:bg-zinc-200 dark:selection:text-zinc-900">
       {/* Top Bar */}
@@ -21,7 +22,7 @@ export function TermsPage({ onBack }: TermsPageProps) {
           </button>
 
           <div
-            onClick={onBack}
+            onClick={onNavigateToHome || onBack}
             className="flex items-center space-x-2 cursor-pointer hover:opacity-85 transition-opacity"
             title="Go to Home"
           >
@@ -92,13 +93,13 @@ export function TermsPage({ onBack }: TermsPageProps) {
           <section>
             <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-3 flex items-center space-x-2">
               <AlertTriangle className="w-4 h-4 text-zinc-500" />
-              <span>4. Service Availability & MIT License Disclaimer</span>
+              <span>4. Service Availability & Platform Disclaimer</span>
             </h2>
             <p className="mb-3">
-              The software is provided &quot;AS IS&quot;, without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement.
+              The service and software are provided &quot;AS IS&quot;, without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement.
             </p>
             <p className="text-xs text-zinc-500">
-              Under no circumstances shall the author (Arpit Chaudhary) or BreakIfy contributors be liable for any claim, damages, or other liability arising from the use of the platform or external destination URLs.
+              Under no circumstances shall BreakIfy or its contributors be liable for any claim, damages, or other liability arising from the use of the platform or external destination URLs.
             </p>
           </section>
 
@@ -115,7 +116,7 @@ export function TermsPage({ onBack }: TermsPageProps) {
         </div>
 
         <div className="mt-12 pt-8 border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center text-xs text-zinc-500">
-          <span>&copy; 2026 BreakIfy. Released under MIT License.</span>
+          <span>&copy; 2026 BreakIfy. All Rights Reserved.</span>
           <Button variant="outline" size="sm" onClick={onBack}>
             Back to Application
           </Button>

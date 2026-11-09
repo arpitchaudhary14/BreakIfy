@@ -22,6 +22,7 @@ import {
 } from '../../components/ui/Table';
 import { ConfirmationDialog } from '../../components/ui/ConfirmationDialog';
 import { linkApi, RecycleBinItem } from '../../services/linkApi';
+import { getShortDisplay } from '../../utils/urlHelper';
 
 export function RecycleBinPage() {
   const [links, setLinks] = useState<RecycleBinItem[]>([]);
@@ -66,6 +67,12 @@ export function RecycleBinPage() {
     fetchRecycleBin();
   }, [fetchRecycleBin]);
 
+  useEffect(() => {
+    const handleSync = () => fetchRecycleBin();
+    window.addEventListener('link-created', handleSync);
+    return () => window.removeEventListener('link-created', handleSync);
+  }, [fetchRecycleBin]);
+
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedIds(links.map((l) => l._id));
@@ -85,6 +92,7 @@ export function RecycleBinPage() {
       setActionLoading(true);
       await linkApi.restoreLink(id);
       await fetchRecycleBin();
+      window.dispatchEvent(new CustomEvent('link-created'));
     } finally {
       setActionLoading(false);
     }
@@ -97,6 +105,7 @@ export function RecycleBinPage() {
       await linkApi.bulkRestore(selectedIds);
       setSelectedIds([]);
       await fetchRecycleBin();
+      window.dispatchEvent(new CustomEvent('link-created'));
     } finally {
       setActionLoading(false);
     }
@@ -109,6 +118,7 @@ export function RecycleBinPage() {
       await linkApi.permanentDeleteLink(permanentDeleteId);
       setPermanentDeleteId(null);
       await fetchRecycleBin();
+      window.dispatchEvent(new CustomEvent('link-created'));
     } finally {
       setActionLoading(false);
     }
@@ -122,6 +132,7 @@ export function RecycleBinPage() {
       setShowBulkPermanentDialog(false);
       setSelectedIds([]);
       await fetchRecycleBin();
+      window.dispatchEvent(new CustomEvent('link-created'));
     } finally {
       setActionLoading(false);
     }
@@ -134,6 +145,7 @@ export function RecycleBinPage() {
       setShowEmptyBinDialog(false);
       setSelectedIds([]);
       await fetchRecycleBin();
+      window.dispatchEvent(new CustomEvent('link-created'));
     } finally {
       setActionLoading(false);
     }
@@ -295,7 +307,7 @@ export function RecycleBinPage() {
                         {link.title}
                       </div>
                       <div className="font-mono text-[11px] text-zinc-500">
-                        breakify.site/{link.shortCode}
+                        {getShortDisplay(link.shortCode)}
                       </div>
                     </TableCell>
                     <TableCell className="text-xs text-zinc-500 font-mono max-w-[260px] truncate" title={link.originalUrl}>

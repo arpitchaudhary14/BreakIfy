@@ -48,13 +48,12 @@ export class AuthController {
       const ipAddress = req.ip || req.socket.remoteAddress;
 
       const result = await authService.register(name, email, password, userAgent, ipAddress);
-      setAuthCookies(res, result.accessToken, result.refreshToken);
 
       res.status(201).json({
         success: true,
         data: {
           user: result.user,
-          message: 'Registration successful. A verification link has been sent to your email.',
+          message: 'Registration successful. Please sign in with your new credentials.',
         },
       });
     } catch (error) {

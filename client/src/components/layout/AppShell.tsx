@@ -4,7 +4,9 @@ import { Sidebar, NavItemKey } from './Sidebar';
 import { Dialog } from '../ui/Dialog';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
-import { Search, Link2 } from 'lucide-react';
+import { Search, Link2, Check, AlertCircle } from 'lucide-react';
+import { linkApi } from '../../services/linkApi';
+import { getShortUrl, getShortDisplay } from '../../utils/urlHelper';
 
 interface AppShellProps {
   onOpenAuth?: () => void;
@@ -35,6 +37,45 @@ export function AppShell({
   // Quick form state
   const [targetUrl, setTargetUrl] = useState('');
   const [customSlug, setCustomSlug] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createdShortUrl, setCreatedShortUrl] = useState<string | null>(null);
+
+  const handleQuickCreateSubmit = async () => {
+    if (!targetUrl.trim()) return;
+    setIsCreating(true);
+    setCreateError(null);
+
+    let finalUrl = targetUrl.trim();
+    if (!/^https?:\/\//i.test(finalUrl)) {
+      finalUrl = `https://${finalUrl}`;
+    }
+
+    try {
+      const res = await linkApi.createLink({
+        originalUrl: finalUrl,
+        customSlug: customSlug.trim() || undefined,
+      });
+
+      const fullShort = getShortUrl(res.link.shortCode);
+      setCreatedShortUrl(fullShort);
+      navigator.clipboard.writeText(fullShort).catch(() => {});
+
+      // Dispatch event to refresh links in any view
+      window.dispatchEvent(new CustomEvent('link-created', { detail: res.link }));
+
+      setTimeout(() => {
+        setIsCreateOpen(false);
+        setTargetUrl('');
+        setCustomSlug('');
+        setCreatedShortUrl(null);
+      }, 4000);
+    } catch (err: unknown) {
+      setCreateError(err instanceof Error ? err.message : 'Failed to create short link');
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   // Global keyboard shortcut listener for CMD+K / CTRL+K
   useEffect(() => {
@@ -137,30 +178,60 @@ export function AppShell({
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         title="Create Short Link"
-        description="Target destination will be shortened to breakify.site"
+        description="Generate an instant trackable short link"
         maxWidth="md"
         footer={
           <>
-            <Button variant="outline" size="sm" onClick={() => setIsCreateOpen(false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setIsCreateOpen(false);
+                setCreateError(null);
+                setCreatedShortUrl(null);
+              }}
+            >
               Cancel
             </Button>
             <Button
               variant="primary"
               size="sm"
-              onClick={() => {
-                alert(`Placeholder: Short link created for ${targetUrl}`);
-                setIsCreateOpen(false);
-                setTargetUrl('');
-                setCustomSlug('');
-              }}
-              disabled={!targetUrl}
+              onClick={handleQuickCreateSubmit}
+              disabled={!targetUrl || isCreating}
+              isLoading={isCreating}
             >
-              Shorten URL
+              {isCreating ? 'Shortening...' : 'Shorten URL'}
             </Button>
           </>
         }
       >
         <div className="space-y-4">
+          {createError && (
+            <div className="p-3 rounded-lg bg-red-500/10 border border-red-200 dark:border-red-900/50 flex items-center space-x-2 text-xs text-red-600 dark:text-red-400">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{createError}</span>
+            </div>
+          )}
+
+          {createdShortUrl && (
+            <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-200 dark:border-emerald-900/50 flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400">
+              <div className="flex items-center space-x-2">
+                <Check className="w-4 h-4 shrink-0" />
+                <span>
+                  Copied:{' '}
+                  <a
+                    href={createdShortUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline font-bold hover:text-emerald-700 dark:hover:text-emerald-300"
+                  >
+                    {createdShortUrl}
+                  </a>
+                </span>
+              </div>
+            </div>
+          )}
+
           <Input
             label="Destination URL"
             placeholder="https://example.com/very/long/campaign-url"
@@ -176,7 +247,7 @@ export function AppShell({
             </label>
             <div className="flex rounded-lg border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden focus-within:ring-1 focus-within:ring-zinc-400 dark:focus-within:ring-zinc-600">
               <span className="inline-flex items-center px-3 text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 font-mono select-none">
-                breakify.site/
+                {getShortDisplay('')}
               </span>
               <input
                 type="text"

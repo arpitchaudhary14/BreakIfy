@@ -369,6 +369,17 @@ export function LoginPage({ onNavigateToRegister, onNavigateToForgot, onSuccess,
             </div>
           </CardContent>
         </Card>
+
+        {/* Privacy & Ethics Pledge */}
+        <div className="mt-4 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/40 text-center space-y-1">
+          <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>Our Privacy Guarantee</span>
+          </div>
+          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+            We don't store your data permanently. We don't sell your data on dark web, with another companies out there in the market. We don't use your data for training of our models and ai agents.
+          </p>
+        </div>
       </div>
     </div>
   );

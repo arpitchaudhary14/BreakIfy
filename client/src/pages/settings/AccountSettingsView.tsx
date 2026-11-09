@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Shield,
   Laptop,
-  Key,
   Trash2,
   Mail,
   Camera,
@@ -22,7 +21,11 @@ import { Dialog } from '../../components/ui/Dialog';
 import { useAuth } from '../../context/AuthContext';
 import { authApi, UserSession } from '../../services/authApi';
 
-export function AccountSettingsView() {
+export interface AccountSettingsViewProps {
+  onAccountDeleted?: () => void;
+}
+
+export function AccountSettingsView({ onAccountDeleted }: AccountSettingsViewProps = {}) {
   const {
     user,
     updateProfile,
@@ -36,13 +39,35 @@ export function AccountSettingsView() {
     refreshUser,
   } = useAuth();
 
-  const [activeSubTab, setActiveSubTab] = useState<'profile' | 'security' | 'sessions' | 'api'>('profile');
+  const [activeSubTab, setActiveSubTab] = useState<'profile' | 'security' | 'sessions'>('profile');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Profile Form state
   const [name, setName] = useState(user?.name || '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar || '');
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileFeedback, setProfileFeedback] = useState<string | null>(null);
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setProfileFeedback('Please select an image file (PNG, JPG, SVG).');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setProfileFeedback('Image size must be under 2MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (result) {
+        setAvatarUrl(result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Email change state
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
@@ -84,6 +109,7 @@ export function AccountSettingsView() {
 
   // Account deletion state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeletedSuccessOpen, setIsDeletedSuccessOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -278,13 +304,44 @@ export function AccountSettingsView() {
     setDeleteLoading(true);
     setDeleteError(null);
     try {
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem(
+          'breakify_account_deleted',
+          'Your BreakIfy account and all associated short URLs have been permanently removed.'
+        );
+      }
+      if (onAccountDeleted) {
+        onAccountDeleted();
+      }
       await deleteAccount(deletePassword);
     } catch (err: unknown) {
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('breakify_account_deleted');
+      }
       setDeleteError(err instanceof Error ? err.message : 'Failed to delete account.');
     } finally {
       setDeleteLoading(false);
     }
   };
+
+  const handleFinalRedirect = () => {
+    setIsDeletedSuccessOpen(false);
+    if (onAccountDeleted) {
+      onAccountDeleted();
+    } else {
+      window.location.hash = '';
+      window.location.href = '/';
+    }
+  };
+
+  useEffect(() => {
+    if (isDeletedSuccessOpen) {
+      const timer = setTimeout(() => {
+        handleFinalRedirect();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isDeletedSuccessOpen]);
 
   const copyRecoveryCodesToClipboard = () => {
     navigator.clipboard.writeText(recoveryCodes.join('\n'));
@@ -357,18 +414,6 @@ export function AccountSettingsView() {
           <Laptop className="w-4 h-4" />
           <span>Active Sessions</span>
         </button>
-
-        <button
-          onClick={() => setActiveSubTab('api')}
-          className={`pb-3 flex items-center space-x-2 border-b-2 transition-colors ${
-            activeSubTab === 'api'
-              ? 'border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100 font-semibold'
-              : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
-          }`}
-        >
-          <Key className="w-4 h-4" />
-          <span>API Credentials</span>
-        </button>
       </div>
 
       {/* Tab 1: Profile */}
@@ -399,15 +444,19 @@ export function AccountSettingsView() {
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex items-center space-x-2">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleAvatarFileChange}
+                        accept="image/*"
+                        className="hidden"
+                      />
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
                         leftIcon={<Camera className="w-3.5 h-3.5" />}
-                        onClick={() => {
-                          const url = prompt('Enter image URL or avatar photo:');
-                          if (url !== null) setAvatarUrl(url);
-                        }}
+                        onClick={() => fileInputRef.current?.click()}
                       >
                         Change Photo
                       </Button>
@@ -426,7 +475,7 @@ export function AccountSettingsView() {
                       )}
                     </div>
                     <p className="text-[11px] text-zinc-500">
-                      Recommended square PNG, JPG, or SVG.
+                      Recommended square PNG, JPG, or SVG under 2MB.
                     </p>
                   </div>
                 </div>
@@ -448,7 +497,7 @@ export function AccountSettingsView() {
                     <div className="flex items-center space-x-2 text-xs">
                       <Mail className="w-4 h-4 text-zinc-400" />
                       <span className="font-mono text-zinc-900 dark:text-zinc-100">
-                        {user?.email || 'alex@breakify.site'}
+                        {user?.email || ''}
                       </span>
                       {user?.isEmailVerified ? (
                         <Badge variant="success" size="sm">Verified</Badge>
@@ -705,29 +754,6 @@ export function AccountSettingsView() {
         </Card>
       )}
 
-      {/* Tab 4: API Credentials */}
-      {activeSubTab === 'api' && (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>REST API Keys</CardTitle>
-              <CardDescription>Authenticate CLI tools and backend workflows</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-mono font-semibold text-zinc-900 dark:text-zinc-100">
-                    bk_live_948f29c017...82f1
-                  </div>
-                  <div className="text-[11px] text-zinc-500">Full write permissions • Created 5 days ago</div>
-                </div>
-                <Badge variant="outline" size="sm">Active</Badge>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
       {/* Two-Factor Authentication Setup Modal */}
       <Dialog
         isOpen={is2faModalOpen}
@@ -966,6 +992,39 @@ export function AccountSettingsView() {
             value={deletePassword}
             onChange={(e) => setDeletePassword(e.target.value)}
           />
+        </div>
+      </Dialog>
+
+      {/* Account Deletion Success Dialog */}
+      <Dialog
+        isOpen={isDeletedSuccessOpen}
+        onClose={handleFinalRedirect}
+        title="Account Deleted"
+        description="Your BreakIfy account and short URLs have been permanently removed."
+        maxWidth="sm"
+        footer={
+          <Button
+            variant="primary"
+            size="sm"
+            className="w-full"
+            onClick={handleFinalRedirect}
+          >
+            Go to Home Page
+          </Button>
+        }
+      >
+        <div className="py-4 flex flex-col items-center text-center space-y-3">
+          <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+            <CheckCircle2 className="w-6 h-6" />
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              Account Successfully Deleted
+            </p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs leading-relaxed">
+              Your profile, credentials, active sessions, and shortened URLs have been permanently deleted. Redirecting you to the home page...
+            </p>
+          </div>
         </div>
       </Dialog>
     </div>
