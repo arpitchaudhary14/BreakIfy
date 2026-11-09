@@ -17,7 +17,7 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
 
   // Google OAuth
-  GOOGLE_CLIENT_ID: z.string().default(''),
+  GOOGLE_CLIENT_ID: z.string().default('361332577055-ojacfd95aiebgmhff69uh11l8f6qtdc3.apps.googleusercontent.com'),
   GOOGLE_CLIENT_SECRET: z.string().default(''),
 
   // Email Transporter Configuration

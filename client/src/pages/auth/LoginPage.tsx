@@ -29,7 +29,9 @@ export function LoginPage({ onNavigateToRegister, onNavigateToForgot, onSuccess,
 
   // Google OAuth GIS
   const googleButtonRef = useRef<HTMLDivElement>(null);
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+  const googleClientId =
+    import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+    '361332577055-ojacfd95aiebgmhff69uh11l8f6qtdc3.apps.googleusercontent.com';
   const [gisRendered, setGisRendered] = useState(false);
 
   useEffect(() => {
