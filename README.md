@@ -256,11 +256,3 @@ BreakIfy implements a defense-in-depth posture:
 * **HTTP-Only, SameSite=Lax** cookies for refresh token isolation.
 * **SSRF Prevention:** Private subnets (`10.0.0.0/8`, `192.168.0.0/16`, `127.0.0.0/8`) and cloud metadata endpoints (`169.254.169.254`) are strictly blocked.
 * **CRLF Injection Defenses:** Destructive header characters are stripped prior to HTTP 302/307 redirects.
-
-For detailed security policies, refer to [`SECURITY.md`](SECURITY.md).
-
----
-
-## 📄 License
-
-This project is licensed under the terms of the BreakIfy License Agreement. See [`LICENSE`](LICENSE) for details.
